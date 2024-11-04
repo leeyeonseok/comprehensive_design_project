@@ -5,10 +5,8 @@ from kinematic import Kinematic
 from trajectory import Trajectory
 import matplotlib.pyplot as plt
 from dxl import Dynamixel
-from scipy.spatial.transform import Rotation as R
-import copy
 
-xml_path = './model/scene.xml'
+xml_path = './MuJoCo_JW/model/scene.xml'
 
 # 모델 로드
 m = mujoco_py.load_model_from_path(xml_path)
@@ -17,12 +15,12 @@ d = sim.data
 viewer = mujoco_py.MjViewer(sim)
 
 #========================= Dynamixel load ==============================
-# dxl = [None] * m.njnt
+dxl = [None] * m.njnt
 # dxl[0] = Dynamixel(id=11)
 # dxl[1] = Dynamixel(id=12)
 # dxl[2] = Dynamixel(id=13)
-# dxl[3] = Dynamixel(id=14)
-# current = [None] * m.njnt
+dxl[3] = Dynamixel(id=14)
+current = [None] * m.njnt
 #========================= Define Parameters ===========================
 traj_time = [4, 8, 12, 16]
 cnt = 0
@@ -148,8 +146,6 @@ while d.time < traj_time[-1] + 2:
     omega = Quat2Omega(quat_d, quatdot_CLIK)
     total = np.hstack((vel_CLIK,omega))
     null = np.eye(4) - np.linalg.pinv(J_pr) @ J_pr
-    # qvel_null = np.full(m.njnt, 10)
-    # qvel_null[3] = 0.1  
     
     qvel_d = DLS_inverse(J_pr) @ np.reshape(total, (6,)) + null @ d.qvel
 
@@ -166,8 +162,8 @@ while d.time < traj_time[-1] + 2:
     #     current[i] = 20  * (qpos_d[i] - dxl[i].get_qpos()) + 40 * (qvel_d[i] - dxl[i].get_qvel())
     #     dxl[i].control(10*current[i])
 
-    # current[3] = 100 * (qpos_d[3] - (-dxl[3].get_qpos())) + 50 * (qvel_d[3] + dxl[3].get_qvel())
-    # dxl[3].control(current[3]) 
+    current[3] = 2 * (qpos_d[3] - dxl[3].get_qpos()) + 1 * (qvel_d[3] - dxl[3].get_qvel())
+    dxl[3].control(1.5*current[3]) 
 
     pd.append(pos_d)
     pvd.append(vel_d)
@@ -181,7 +177,7 @@ while d.time < traj_time[-1] + 2:
     tq3.append(joint_torq[3])
     quatv.append(quatdot_d)
 
-    print("==========================================")
+    print("===============================================================================================================================")
     print(d.time, "\t", "joint_torque : ", joint_torq)
     print(d.time, "\t", "P_EE : ", d.body_xpos[-1], "\t", P_EE)   
     print(d.time, "\t", "qpos_d - d.qpos : ", qpos_d - d.qpos)
@@ -190,9 +186,9 @@ while d.time < traj_time[-1] + 2:
     print(d.time, "\t", "Rot_EE : ", R_EE)
     print(d.time, "\t", "Rot_mj : ", R_EE_mj, linear_d[1].excuted_once)
     print(d.time, "\t", "quat : ", Rot2Quat(Rot_y(90)), Rot2Quat(Rot_y(90) @ Rot_x(-135)), Rot2Quat(Rot_y(90) @ Rot_x(-135) @ Rot_x(-90)))
-    # print(d.time, "\t", "current : ", current)
-    # print(d.time, "\t", "qpos_dxl : ", dxl[3].get_qpos())
-    print("==========================================")
+    print(d.time, "\t", "current : ", current)
+    print(d.time, "\t", "qpos_dxl : ", dxl[3].get_qpos(), d.qpos, dxl[3].get_qvel(), d.qvel[3])
+    print("===============================================================================================================================")
 
     for i in range(m.nu):
         d.ctrl[i] = joint_torq[i]
@@ -200,7 +196,7 @@ while d.time < traj_time[-1] + 2:
     sim.step()
     viewer.render()
 
-#dxl.close_port()
+dxl.close_port()
 
 plt.subplot(321)
 plt.plot(T,pe)

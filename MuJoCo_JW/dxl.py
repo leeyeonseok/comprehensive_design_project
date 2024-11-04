@@ -74,11 +74,8 @@ class Dynamixel:
         dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_GOAL_POSITION, center_pos)
     
     def control(self, goal):
-        goal_torque = goal / pi
-        goal_torque = int(goal_torque)
+        goal_torque = int(goal % 50 / 6) 
         dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_GOAL_CURRENT, goal_torque)
-
-
 
     def get_qpos(self):
         dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_PRESENT_POSITION)
@@ -88,7 +85,7 @@ class Dynamixel:
     def get_qvel(self):
         dxl_present_velocity, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_PRESENT_VELOCITY)
 
-        return dxl_present_velocity * 0.229 / 60
+        return dxl_present_velocity % 50 * 0.229 / 60
 
     def close_port(self):
         self.portHandler.closePort()
@@ -96,12 +93,12 @@ class Dynamixel:
 
 # import numpy as np
 
-# m1 = Dynamixel(2)
+# m1 = Dynamixel(14)
+ 
+# while 1:
+#     torque = -1
 
-# q_d = np.linspace(pi/2 , 3* pi/2, 150)
-# for i in q_d:
-#     torque = 110  * (i - m1.get_qpos())
-#     print(m1.get_qpos())
-#     m1.control(torque) 
+#     m1.control(torque)
+#     print(m1.get_qpos(), m1.get_qvel())
 
 # m1.close_port()
