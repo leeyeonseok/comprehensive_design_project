@@ -1,0 +1,28 @@
+<mujoco model="scene">
+    <include file="Mani.xml"/>
+    <visual>
+        <global fovy="45" linewidth="2" glow="0.3"/>
+        <quality shadowsize="4096" numslices="28"/>
+        <map stiffness="50" stiffnessrot="100"/>
+        <scale forcewidth="0.03" contactwidth="0.15" contactheight="0.1" connect="0.1" com="0.2" jointlength="2.5" jointwidth="0.05" actuatorlength="0.5" actuatorwidth="0.3" framelength="1" framewidth="0.03"/>
+        <rgba haze="0.6 0.8 0.9 1" force="0 1 0 0.5" com="0 0 1 1"/>
+    </visual>
+    <asset>
+        <texture name="texplane" type="2d" builtin="checker" width="512" height="512" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.1 0.2" markrgb="1 1 1"/>
+        <texture name="texgeom" type="cube" builtin="flat" width="512" height="512" mark="cross" rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" markrgb="1 1 1"/>
+        <texture name="sky" type="skybox" builtin="gradient" width="512" height="512" rgb1="1 1 1" rgb2="0.6 0.8 1"/>
+        <material name="MatGnd" reflectance="0" specular="1" shininess="1" rgba="0 0.4 0.5 1"/>
+        <material name="MatGeom" texture="texgeom" texuniform="true"/>
+        <material name="MatPlane" texture="texplane" reflectance="0" texrepeat="1 1" texuniform="true"/>
+    </asset>
+    <!-- ######################################################################### -->
+    <worldbody>
+        <light directional="true" pos=" 5 -5 5" dir="-0.5 0.5 -1" diffuse="0.3 0.3 0.3" specular="0.0 0.0 0.0" castshadow="false"/>
+        <light directional="true" pos=" 5 5 5" dir="-0.5 -0.5 -1" diffuse="0.3 0.3 0.3" specular="0.0 0.0 0.0" castshadow="false"/>
+        <light directional="true" pos="-5 5 5" dir=" 0.5 -0.5 -1" diffuse="0.3 0.3 0.3" specular="0.0 0.0 0.0" castshadow="false"/>
+        <light directional="true" pos="-5 -5 5" dir=" 0.5 0.5 -1" diffuse="0.3 0.3 0.3" specular="0.0 0.0 0.0" castshadow="false"/>
+        <light directional="true" pos=" 0 0 5" dir=" 0.0 0.0 -1" diffuse="0.1 0.1 0.1" specular="0.1 0.1 0.1" castshadow="false"/>
+        <!--  Ground Floor  -->
+        <geom name="Ground Floor" type="plane" pos="0 0 0" size="0 0 100" material="MatPlane"/>
+    </worldbody>
+</mujoco>

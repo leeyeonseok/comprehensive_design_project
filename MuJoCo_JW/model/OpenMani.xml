@@ -1,0 +1,55 @@
+<mujoco model="Open Manipulator">
+    <compiler inertiafromgeom="true" angle="degree"/>
+    <option timestep="0.005" gravity="0 0 -9.81" cone="elliptic" jacobian="auto" solver="Newton" impratio="1.0"/>
+    <!--  collision="predefined"  -->
+    <option>
+        <flag gravity="enable" override="enable"/>
+    </option>
+    <default>
+        <geom contype="1" conaffinity="1" condim="3"/>
+        <joint limited="false" damping="0.5" armature="0.1" stiffness="0" frictionloss="0.1"/>
+        <motor gear="1 0 0 0 0 0" ctrllimited="false" ctrlrange="-100 100"/>
+    </default>
+    <!--  #########################################################################  -->
+    <worldbody>
+        <!--  Link1  -->
+        <body name="link1" pos="0 0 0" euler="0 0 0">
+            <joint name="L1" pos="0 0 0" type="hinge" axis="0 0 1" limited="false"/>
+            <geom type="cylinder" pos="0 0 0.19175" size="0.06 0.19175" rgba="0.3 0.6 0 1"/>
+            <geom type="cylinder" pos="0 0 0.2" euler="0 0 0" size="0.064 0.02" rgba="1 0 0.5 1"/>
+            <!--  Link2  -->
+            <body name="link2" pos="0 0 0.3825" euler="90 0 90">
+                <joint name="L2" pos="0 0 0" type="hinge" axis="0 0 1" limited="true" range="-150 150"/>
+                <geom type="cylinder" pos="0 0.32 0" euler="-90 0 0" size="0.06 0.32" rgba="0.3 0.6 0 1"/>
+                <geom type="cylinder" pos="0 0 0" euler="0 0 0" size="0.04 0.07" rgba="1 0 0.5 1"/>
+                <geom type="box" pos="0.04 0.64 0" euler="0 0 0" size="0.12 0.06 0.06" rgba="0.3 0.6 0 1"/>
+                <!--  Link3 -->
+                <body name="link3" pos="0.12 0.64 0" euler="0 0 -180">
+                    <joint name="L3" pos="0 0 0" type="hinge" axis="0 0 1" limited="true" range="-200 100"/>
+                    <geom type="cylinder" pos="0 0.31 0" euler="-90 0 0" size="0.06 0.31" rgba="0.3 0.6 0 1"/>
+                    <geom type="cylinder" pos="0 0 0" euler="0 0 0" size="0.04 0.07" rgba="1 0 0.5 1"/>
+                    <!--  Link4 -->
+                    <body name="link4" pos="0 0.62 0" euler="0 0 0">
+                        <joint name="L4" pos="0 0 0" type="hinge" axis="0 0 1" limited="true" range="-160 160"/>
+                        <geom type="box" pos="0 0.12 0" euler="0 0 0" size="0.09 0.09 0.13" rgba="0.5 0.6 0.3 1"/>
+                        <geom type="cylinder" pos="0 0 0" euler="0 0 0" size="0.04 0.07" rgba="1 0 0.5 1"/>
+                        <!--  Fingers -->
+                        <body name="fingers" pos="0 0.533 0" euler="-90 0 0">
+                            <!-- <geom type="box" pos="0 0 -0.04" euler="0 0 0" size="0.02 0.0888 0.02" rgba="0.5 0.6 0.3 1"/>
+                            <geom type="box" pos="0 0 0.04" euler="0 0 0" size="0.02 0.0888 0.02" rgba="0.5 0.6 0.3 1"/> -->
+                            <site name="EE" type="sphere" pos="0 0 0" size="0.02" rgba="1 0 0 1"/>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+    </worldbody>
+    <actuator>
+        <motor joint="L1" name="link1" gear="1" ctrllimited="true" ctrlrange="-1193 1193"/>
+        <motor joint="L2" name="link2" gear="1" ctrllimited="true" ctrlrange="-1193 1193"/>
+        <motor joint="L3" name="link3" gear="1" ctrllimited="true" ctrlrange="-1193 1193"/>
+        <motor joint="L4" name="link4" gear="1" ctrllimited="true" ctrlrange="-1193 1193"/>
+        <!-- <motor joint="F1" name="finger1" gear="1" ctrllimited="true" ctrlrange="-250 250"/>
+        <motor joint="F2" name="finger2" gear="1" ctrllimited="true" ctrlrange="-250 250"/> -->
+    </actuator>
+</mujoco>
