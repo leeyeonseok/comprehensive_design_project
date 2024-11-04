@@ -33,14 +33,7 @@ qvel = [None] * m.njnt
 qpos = np.reshape(qpos, (m.njnt,))
 qvel = np.reshape(qvel, (m.njnt,))
 qpos_d = 0
-linear_d[0] = Trajectory(0,traj_time[0])
-linear_d[1] = Trajectory(traj_time[0],traj_time[1])
-linear_d[2] = Trajectory(traj_time[1], traj_time[2])
-linear_d[3] = Trajectory(traj_time[2], traj_time[3])
-angular_d[0] = Trajectory(0,traj_time[0])
-angular_d[1] = Trajectory(traj_time[0],traj_time[1])
-angular_d[2] = Trajectory(traj_time[1],traj_time[2])
-angular_d[3] = Trajectory(traj_time[2],traj_time[3])
+
 #=========================== Plot ==================================
 qpd=[]
 qvd=[]
@@ -81,7 +74,7 @@ while d.time < traj_time[-1] + 2:
     if cnt == 0:
         linear_d[0] = Trajectory(0,traj_time[0])
         init_state = d.body_xpos[-1]
-        final_state = [0.21, 0, 0.1725]
+        final_state = [0.248, 0, 0.1725]
         linear_d[0].get_coeff(init_state, final_state)
 
         linear_d[1] = Trajectory(traj_time[0], traj_time[1])
@@ -196,7 +189,6 @@ while d.time < traj_time[-1] + 2:
     print(d.time, "\t", "quat_e : ", quat_mj, "\t", quat_e) 
     print(d.time, "\t", "Rot_EE : ", R_EE)
     print(d.time, "\t", "Rot_mj : ", R_EE_mj, linear_d[1].excuted_once)
-    
     print(d.time, "\t", "quat : ", Rot2Quat(Rot_y(90)), Rot2Quat(Rot_y(90) @ Rot_x(-135)), Rot2Quat(Rot_y(90) @ Rot_x(-135) @ Rot_x(-90)))
     # print(d.time, "\t", "current : ", current)
     # print(d.time, "\t", "qpos_dxl : ", dxl[3].get_qpos())
@@ -207,7 +199,7 @@ while d.time < traj_time[-1] + 2:
     
     sim.step()
     viewer.render()
-print(d.time, "\t", "angle_diff : ", angular_d[1].angle_diff, angular_d[2].angle_diff, angular_d[3].angle_diff)
+
 #dxl.close_port()
 
 plt.subplot(321)
