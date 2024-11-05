@@ -249,14 +249,5 @@ class Kinematic:
         
         return J_p, J_r
     
-    # def get_rot(self):
-    #     rot = [None] * (self.model.njnt + 1)
-    #     rot[0] = Rot_z(self.data.qpos[0] * 180 / pi)
-    #     rot[1] = rot[0] @ Rot_x(90) @ Rot_z(self.data.qpos[1] * 180 / pi)
-    #     rot[2] = rot[1] @ Rot_z(self.data.qpos[2] * 180 / pi)
-    #     rot[3] = rot[2] @ Rot_z(self.data.qpos[3] * 180 / pi)
-    #     rot[4] = rot[3] @ Rot_z(-90) @ Rot_x(-90)
-
-    #     return rot
 
 

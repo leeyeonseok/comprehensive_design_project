@@ -1,13 +1,12 @@
 import os
 import time
 from math import pi
-
-from dynamixel_sdk import *  # Dynamixel SDK 라이브러리 임포트
+from dynamixel_sdk import *  
 
 class Dynamixel:
     def __init__(self, id):
         # 통신 설정
-        self.DEVICENAME = '/dev/ttyUSB0'  # Linux의 경우 '/dev/ttyUSB0', Windows의 경우 'COM3' 등
+        self.DEVICENAME = '/dev/ttyUSB0'  
         self.BAUDRATE = 1000000
         self.PROTOCOL_VERSION = 2.0       # Dynamixel 프로토콜 버전
 
@@ -33,8 +32,8 @@ class Dynamixel:
 
         # 다이나믹셀 연결 및 위치 초기화
         self.connect_motor()
-        self.set_init_state()
-        self.change_mode(self.CURRENT_CONTROL)
+        self.get_init_state()
+        # self.change_mode(self.CURRENT_CONTROL)
 
     def connect_motor(self):
         # 포트 열기
@@ -59,46 +58,56 @@ class Dynamixel:
 
         print("다이나믹셀 토크 활성화 완료.")
 
-    def change_mode(self, num):
-        # Operating Mode 변경
-        dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, self.DXL_ID, self.OPERATING_MODE, num)
-        if dxl_comm_result != COMM_SUCCESS:
-            print(f"Operating Mode 변경 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
-            quit()
+    # def change_mode(self, num):
+    #     # Operating Mode 변경
+    #     dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, self.DXL_ID, self.OPERATING_MODE, num)
+    #     if dxl_comm_result != COMM_SUCCESS:
+    #         print(f"Operating Mode 변경 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
+    #         quit()
 
-        print(f"Operating Mode가 {num}로 변경되었습니다.")
+    #     print(f"Operating Mode가 {num}로 변경되었습니다.")
 
-    def set_init_state(self):
-        center_pos = 2048
-        self.change_mode(self.POSITION_CONTROL)
-        dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_GOAL_POSITION, center_pos)
+    def get_init_state(self):
+        self.init_state, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_PRESENT_POSITION)
+
+        if self.init_state > 4000000:
+            self.init_state = self.init_state - 4294965248 - 2048
+        
+        self.init_state = self.init_state / 2048 * pi
+
     
     def control(self, goal):
-        goal_torque = int(goal % 50 / 6) 
+        goal_torque = int(goal)
         dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_GOAL_CURRENT, goal_torque)
 
     def get_qpos(self):
         dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_PRESENT_POSITION)
 
-        return (dxl_present_position % 4096) / 2048 * pi - pi
+        if dxl_present_position > 4000000:
+            dxl_present_position = dxl_present_position - 4294965248 - 2048
+
+        return dxl_present_position / 2048 * pi #- self.init_state
     
     def get_qvel(self):
         dxl_present_velocity, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_PRESENT_VELOCITY)
+        
+        if dxl_present_velocity > 400000:
+            dxl_present_velocity = dxl_present_velocity - 4294967296
 
-        return dxl_present_velocity % 50 * 0.229 / 60
+        return dxl_present_velocity * 0.229 / 60
 
     def close_port(self):
         self.portHandler.closePort()
 
 
-# import numpy as np
+import numpy as np
 
-# m1 = Dynamixel(14)
+m1 = Dynamixel(14)
  
-# while 1:
-#     torque = -1
+while 1:
+    torque = 0
 
-#     m1.control(torque)
-#     print(m1.get_qpos(), m1.get_qvel())
+    m1.control(torque)
+    print("torque : ", torque, "\t", "qpos : ", m1.get_qpos(), "\t", "qvel : ", m1.get_qvel())
 
-# m1.close_port()
+m1.close_port()
