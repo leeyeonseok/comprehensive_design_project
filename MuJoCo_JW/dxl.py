@@ -77,7 +77,10 @@ class Dynamixel:
 
     
     def control(self, goal):
+        if goal < 0:
+            goal *= 1.5
         goal_torque = int(goal)
+        
         dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_GOAL_CURRENT, goal_torque)
 
     def get_qpos(self):
@@ -100,14 +103,14 @@ class Dynamixel:
         self.portHandler.closePort()
 
 
-import numpy as np
+# import numpy as np
 
-m1 = Dynamixel(14)
+# m1 = Dynamixel(14)
  
-while 1:
-    torque = 0
+# while 1:
+#     torque = 0
 
-    m1.control(torque)
-    print("torque : ", torque, "\t", "qpos : ", m1.get_qpos(), "\t", "qvel : ", m1.get_qvel())
+#     m1.control(torque)
+#     print("torque : ", torque, "\t", "qpos : ", m1.get_qpos(), "\t", "qvel : ", m1.get_qvel())
 
-m1.close_port()
+# m1.close_port()

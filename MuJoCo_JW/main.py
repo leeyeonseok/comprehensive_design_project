@@ -162,8 +162,8 @@ while d.time < traj_time[-1] + 2:
     #     current[i] = 20  * (qpos_d[i] - dxl[i].get_qpos()) + 40 * (qvel_d[i] - dxl[i].get_qvel())
     #     dxl[i].control(10*current[i])
 
-    current[3] = 2 * (qpos_d[3] - dxl[3].get_qpos()) + 1 * (qvel_d[3] - dxl[3].get_qvel())
-    dxl[3].control(1.5*current[3]) 
+    current[3] = 2 * (qpos_d[0] - dxl[3].get_qpos()) + 1 * (qvel_d[0] - dxl[3].get_qvel())
+    dxl[3].control(2*current[3]) 
 
     pd.append(pos_d)
     pvd.append(vel_d)
