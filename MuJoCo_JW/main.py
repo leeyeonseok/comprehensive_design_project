@@ -15,12 +15,12 @@ d = sim.data
 viewer = mujoco_py.MjViewer(sim)
 
 #========================= Dynamixel load ==============================
-dxl = [None] * m.njnt
+# dxl = [None] * m.njnt
 # dxl[0] = Dynamixel(id=11)
 # dxl[1] = Dynamixel(id=12)
 # dxl[2] = Dynamixel(id=13)
-dxl[3] = Dynamixel(id=14)
-current = [None] * m.njnt
+# dxl[3] = Dynamixel(id=14)
+# current = [None] * m.njnt
 #========================= Define Parameters ===========================
 traj_time = [4, 8, 12, 16]
 cnt = 0
@@ -40,11 +40,12 @@ quatd=[]
 quatv=[]
 pvd=[]
 pe=[]
+T=[]
 tq0=[]
 tq1=[]
 tq2=[]
 tq3=[]
-T=[]
+
 
 while d.time < traj_time[-1] + 2:
     # ========================================Kinematics: START===============================================
@@ -82,12 +83,12 @@ while d.time < traj_time[-1] + 2:
 
         linear_d[2] = Trajectory(traj_time[1], traj_time[2])
         init_state = linear_d[1].final_state
-        final_state = [0.311, 0.311, 0.18]
+        final_state = [0.211, 0.211, 0.18]
         linear_d[2].get_coeff(init_state, final_state)
 
         linear_d[3] = Trajectory(traj_time[2], traj_time[3])
         init_state = linear_d[2].final_state
-        final_state = [-0.272, 0.272, 0.201]
+        final_state = [-0.192, 0.192, 0.201]
         linear_d[3].get_coeff(init_state, final_state)
     # ========================================================================================================
         angular_d[0] = Trajectory(0,traj_time[0])
@@ -137,7 +138,7 @@ while d.time < traj_time[-1] + 2:
     
     # ==========================================Trajectory: END===============================================
     vel_CLIK = vel_d + 50 * (pos_d - d.body_xpos[-1])
-    quatdot_CLIK = quatdot_d + 10 * (quat_d - quat_mj)
+    quatdot_CLIK = quatdot_d + 50 * (quat_d - quat_mj)
     del_quat = mul_quat(quat_d, inverse_quat(quat_e))
     angle_error = 2 * np.arctan2(np.linalg.norm(del_quat[1:]), del_quat[0])  # 각도
     axis_error = del_quat[1:] / (np.linalg.norm(del_quat[1:]) + 10 ** (-5))  # 축
@@ -153,17 +154,17 @@ while d.time < traj_time[-1] + 2:
     qpos_d = qpos_d + qvel_d * m.opt.timestep
     
     # joint_torq = 2000 * (qpos_d - d.qpos) + 1300 * (qvel_d - d.qvel)
-    # joint_torq = 100 * (qpos_d - d.qpos) + 50 * (qvel_d - d.qvel)  # 200Hz  100, 100
-    joint_torq = 20 * (qpos_d - d.qpos) + 10 * (qvel_d - d.qvel)  # 200Hz  100, 100
+    # joint_torq = 20 * (qpos_d - d.qpos) + 10 * (qvel_d - d.qvel)  # 200Hz  50, 50
+    joint_torq = 0 * (qpos_d - d.qpos) + 1 * (qvel_d - d.qvel)  # 10Hz  100, 100
     # joint_torq = 10 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel)  # 100Hz  100, 100
     # joint_torq = 3 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel) # 50Hz  3, 20 40 50 끝까지 흔들리긴함
 
     # for i in range(4):
-    #     current[i] = 20  * (qpos_d[i] - dxl[i].get_qpos()) + 40 * (qvel_d[i] - dxl[i].get_qvel())
-    #     dxl[i].control(10*current[i])
-
-    current[3] = 2 * (qpos_d[0] - dxl[3].get_qpos()) + 1 * (qvel_d[0] - dxl[3].get_qvel())
-    dxl[3].control(2*current[3]) 
+    #     current[i] = 30 * (qpos_d[i] - dxl[i].get_qpos()) + 30 * (qvel_d[i] - dxl[i].get_qvel())
+    #     if i == 1:
+    #         dxl[i].control(1.5 * current[i]) 
+    #     else:
+    #         dxl[i].control(current[i]) 
 
     pd.append(pos_d)
     pvd.append(vel_d)
@@ -178,16 +179,16 @@ while d.time < traj_time[-1] + 2:
     quatv.append(quatdot_d)
 
     print("===============================================================================================================================")
-    print(d.time, "\t", "joint_torque : ", joint_torq)
+    print(d.time, "\t", "joint_torque : ", joint_torq, d.xaxis, K.get_jnt_axis())
     print(d.time, "\t", "P_EE : ", d.body_xpos[-1], "\t", P_EE)   
-    print(d.time, "\t", "qpos_d - d.qpos : ", qpos_d - d.qpos)
+    print(d.time, "\t", "qpos_d : ", qpos_d)
     print(d.time, "\t", "pos_d - P_EE : ", pos_d - d.body_xpos [-1])
     print(d.time, "\t", "quat_e : ", quat_mj, "\t", quat_e) 
     print(d.time, "\t", "Rot_EE : ", R_EE)
     print(d.time, "\t", "Rot_mj : ", R_EE_mj, linear_d[1].excuted_once)
     print(d.time, "\t", "quat : ", Rot2Quat(Rot_y(90)), Rot2Quat(Rot_y(90) @ Rot_x(-135)), Rot2Quat(Rot_y(90) @ Rot_x(-135) @ Rot_x(-90)))
-    print(d.time, "\t", "current : ", current)
-    print(d.time, "\t", "qpos_dxl : ", dxl[3].get_qpos(), d.qpos, dxl[3].get_qvel(), d.qvel[3])
+    # print(d.time, "\t", "current : ", current)
+    # print(d.time, "\t", "qpos_dxl : ", dxl[3].get_qpos(), d.qpos, dxl[3].get_qvel(), d.qvel[3])
     print("===============================================================================================================================")
 
     for i in range(m.nu):
@@ -196,7 +197,8 @@ while d.time < traj_time[-1] + 2:
     sim.step()
     viewer.render()
 
-dxl.close_port()
+# for i in range(4):
+#     dxl[i].close_port()
 
 plt.subplot(321)
 plt.plot(T,pe)
@@ -209,8 +211,8 @@ plt.title("qvel_d")
 plt.grid()
 
 plt.subplot(323)
-plt.plot(T,pd)
-plt.title("pos_d")
+plt.plot(T,qpd)
+plt.title("qpos_d")
 plt.grid()
 
 plt.subplot(324)

@@ -1,6 +1,6 @@
 <mujoco model="Open Manipulator">
     <compiler inertiafromgeom="true" angle="degree"/>
-    <option timestep="0.005" gravity="0 0 -9.81" cone="elliptic" jacobian="auto" solver="Newton" impratio="1.0"/>
+    <option timestep="0.1" gravity="0 0 -9.81" cone="elliptic" jacobian="auto" solver="Newton" impratio="1.0"/>
     <!--  collision="predefined"  -->
     <option>
         <flag gravity="enable" override="enable"/>
@@ -18,18 +18,18 @@
             <geom type="cylinder" pos="0 0 0.03835" size="0.012 0.03835" rgba="0.3 0.6 0 1"/>
             <geom type="cylinder" pos="0 0 0.04" euler="0 0 0" size="0.0128 0.004" rgba="1 0 0.5 1"/>
             <!--  Link2  -->
-            <body name="link2" pos="0 0 0.0765" euler="90 0 70">
+            <body name="link2" pos="0 0 0.0765" euler="90 0 90">
                 <joint name="L2" pos="0 0 0" type="hinge" axis="0 0 1" limited="true" range="-150 150"/>
                 <geom type="cylinder" pos="0 0.064 0" euler="-90 0 0" size="0.012 0.064" rgba="0.3 0.6 0 1"/>
                 <geom type="cylinder" pos="0 0 0" euler="0 0 0" size="0.008 0.014" rgba="1 0 0.5 1"/>
                 <geom type="box" pos="0.008 0.128 0" euler="0 0 0" size="0.024 0.012 0.012" rgba="0.3 0.6 0 1"/>
                 <!--  Link3 -->
-                <body name="link3" pos="0.024 0.128 0" euler="0 0 -140">
+                <body name="link3" pos="0.024 0.128 0" euler="0 0 -180">
                     <joint name="L3" pos="0 0 0" type="hinge" axis="0 0 1" limited="true" range="-200 100"/>
                     <geom type="cylinder" pos="0 0.062 0" euler="-90 0 0" size="0.012 0.062" rgba="0.3 0.6 0 1"/>
                     <geom type="cylinder" pos="0 0 0" euler="0 0 0" size="0.008 0.014" rgba="1 0 0.5 1"/>
                     <!--  Link4 -->
-                    <body name="link4" pos="0 0.124 0" euler="0 0 -20">
+                    <body name="link4" pos="0 0.124 0" euler="0 0 0">
                         <joint name="L4" pos="0 0 0" type="hinge" axis="0 0 1" limited="true" range="-160 160"/>
                         <geom type="box" pos="0 0.024 0" euler="0 0 0" size="0.018 0.018 0.026" rgba="0.5 0.6 0.3 1"/>
                         <geom type="cylinder" pos="0 0 0" euler="0 0 0" size="0.008 0.014" rgba="1 0 0.5 1"/>

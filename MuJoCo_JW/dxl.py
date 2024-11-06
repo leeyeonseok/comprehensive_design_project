@@ -2,9 +2,10 @@ import os
 import time
 from math import pi
 from dynamixel_sdk import *  
+import numpy as np
 
 class Dynamixel:
-    def __init__(self, id):
+    def __init__(self, ids):
         # 통신 설정
         self.DEVICENAME = '/dev/ttyUSB0'  
         self.BAUDRATE = 1000000
@@ -15,7 +16,7 @@ class Dynamixel:
         self.CURRENT_CONTROL = 0
         self.POSITION_CONTROL = 3
         self.CURRENT_BASED_POSITION_CONTROL = 5
-        self.DXL_ID = id                   # 제어할 다이나믹셀의 ID
+        self.DXL_IDs = ids                 # 제어할 다이나믹셀의 ID
         self.ADDR_TORQUE_ENABLE = 64       # Torque Enable 주소
         self.ADDR_GOAL_CURRENT = 102       # 목표 torque 주소
         self.ADDR_GOAL_POSITION = 116      # 목표 위치 주소
@@ -30,9 +31,12 @@ class Dynamixel:
         self.portHandler = PortHandler(self.DEVICENAME)
         self.packetHandler = Protocol2PacketHandler()
 
+        self.groupSyncWriteTorque = GroupSyncWrite(self.portHandler, self.packetHandler, self.ADDR_GOAL_CURRENT, 2)
+        self.groupSyncWritePosition = GroupSyncWrite(self.portHandler, self.packetHandler, self.ADDR_GOAL_POSITION, 4)
+        
         # 다이나믹셀 연결 및 위치 초기화
         self.connect_motor()
-        self.get_init_state()
+        self.init_state = self.get_init_state()
         # self.change_mode(self.CURRENT_CONTROL)
 
     def connect_motor(self):
@@ -51,12 +55,13 @@ class Dynamixel:
             quit()
 
         # 다이나믹셀의 토크 활성화
-        dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_TORQUE_ENABLE, self.TORQUE_ENABLE)
-        if dxl_comm_result != COMM_SUCCESS:
-            print(f"토크 활성화 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
-            quit()
+        for dxl_id in self.DXL_IDs:
+            dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.ADDR_TORQUE_ENABLE, self.TORQUE_ENABLE)
+            if dxl_comm_result != COMM_SUCCESS:
+                print(f"토크 활성화 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
+                quit()
 
-        print("다이나믹셀 토크 활성화 완료.")
+            print("다이나믹셀 토크 활성화 완료.")
 
     # def change_mode(self, num):
     #     # Operating Mode 변경
@@ -68,36 +73,59 @@ class Dynamixel:
     #     print(f"Operating Mode가 {num}로 변경되었습니다.")
 
     def get_init_state(self):
-        self.init_state, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_PRESENT_POSITION)
-
-        if self.init_state > 4000000:
-            self.init_state = self.init_state - 4294965248 - 2048
-        
-        self.init_state = self.init_state / 2048 * pi
+        init_states = {}
+        for dxl_id in self.DXL_IDs:
+            init_state, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_POSITION)
+            if init_state > 4000000:
+                init_state = init_state - 4294965248 - 2048
+            init_states[dxl_id] = init_state / 2048 * pi
+        return init_states
 
     
-    def control(self, goal):
-        if goal < 0:
-            goal *= 1.5
-        goal_torque = int(goal)
+    def control_torque(self, torque_values):
+        self.groupSyncWriteTorque.clearParam()
         
-        dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_GOAL_CURRENT, goal_torque)
+        for dxl_id, goal in zip(self.DXL_IDs, torque_values):
+            if goal < 0:
+                goal *= 3
+            goal_torque = int(goal)
+            param_goal_torque = [DXL_LOBYTE(goal_torque), DXL_HIBYTE(goal_torque)]
+            self.groupSyncWriteTorque.addParam(dxl_id, param_goal_torque)
 
+        self.groupSyncWriteTorque.txPacket()
+        
+    def control_pos(self, goal_position):
+        self.groupSyncWritePosition.clearParam()
+        for dxl_id, goal in zip(self.DXL_IDs, goal_position):
+            init_state = self.init_state[dxl_id]
+            goal = goal / pi * 2048 + init_state / pi * 2048
+            goal_pos = int(goal)
+            param_goal_pos = [DXL_LOBYTE(DXL_LOWORD(goal_pos)),
+                              DXL_HIBYTE(DXL_LOWORD(goal_pos)),
+                              DXL_LOBYTE(DXL_HIWORD(goal_pos)),
+                              DXL_HIBYTE(DXL_HIWORD(goal_pos))]
+            self.groupSyncWritePosition.addParam(dxl_id, param_goal_pos)
+        
+        self.groupSyncWritePosition.txPacket()
+    
     def get_qpos(self):
-        dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_PRESENT_POSITION)
-
-        if dxl_present_position > 4000000:
-            dxl_present_position = dxl_present_position - 4294965248 - 2048
-
-        return dxl_present_position / 2048 * pi #- self.init_state
+        positions = np.zeros(len(self.DXL_IDs))
+        for num, dxl_id in enumerate(self.DXL_IDs):
+            dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_POSITION)
+            if dxl_present_position > 4000000:
+                dxl_present_position = dxl_present_position - 4294965248 - 2048
+            positions[num] = dxl_present_position / 2048 * pi #- self.init_state[dxl_id]
+        # 토크 제어시 self.init_state 제거
+        return positions
     
     def get_qvel(self):
-        dxl_present_velocity, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, self.DXL_ID, self.ADDR_PRESENT_VELOCITY)
-        
-        if dxl_present_velocity > 400000:
-            dxl_present_velocity = dxl_present_velocity - 4294967296
-
-        return dxl_present_velocity * 0.229 / 60
+        velocities = np.zeros(len(self.DXL_IDs))
+        for num, dxl_id in enumerate(self.DXL_IDs):
+            dxl_present_velocity, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_VELOCITY)
+            if dxl_present_velocity > 400000:
+                dxl_present_velocity = dxl_present_velocity - 4294967296
+            velocities[num] = dxl_present_velocity * 0.229 / 60
+        return velocities
 
     def close_port(self):
         self.portHandler.closePort()
@@ -107,10 +135,10 @@ class Dynamixel:
 
 # m1 = Dynamixel(14)
  
-# while 1:
-#     torque = 0
 
-#     m1.control(torque)
+# for i in np.linspace(0, 4, 100):
+#     torque = -pi * i / 8
+#     m1.control_pos(torque)
 #     print("torque : ", torque, "\t", "qpos : ", m1.get_qpos(), "\t", "qvel : ", m1.get_qvel())
 
 # m1.close_port()

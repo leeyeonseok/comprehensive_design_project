@@ -3,13 +3,7 @@ from functions import *
 from scipy.linalg import expm
 from math import pi
 
-class Kinematic:
-    def __init__(self, sim):
-        self.sim = sim
-        self.model = sim.model
-        self.data = sim.data
-
-    
+class Kinematic:    
     def get_first_wv(self):
         """
         실제 로봇의 w,v 를 넣으면 됨
@@ -22,17 +16,6 @@ class Kinematic:
         # for i in range(1, self.model.nbody - 1):
         #     q.append(self.data.body_xpos[i])
         
-        #==================4DOF========================
-        # w = np.array([[0, 0, 1],
-        #               [0,-1, 0],
-        #               [0,-1, 0],
-        #               [0,-1, 0]])
-        
-        # q = np.array([np.array([0, 0, 0]).T,
-        #               np.array([0, 0, 0.5]).T,
-        #               np.array([0, 0, 0.5]).T + Rot_y(10) @ np.array([0, 0, 0.8]).T,
-        #               np.array([0, 0, 0.5]).T + Rot_y(10) @ np.array([0, 0, 0.8]).T + Rot_y(10) @ Rot_y(10) @ np.array([0, 0, 1.0]).T])
-
         #==================Open4DOF========================
         w = np.array([[0, 0, 1],
                       [0,-1, 0],
@@ -65,69 +48,23 @@ class Kinematic:
         v = xi[3:]
         omega_norm = np.linalg.norm(omega)
 
-        if self.model.jnt_type[i] == 3: # Hinge
-            omega_hat = skew(omega)
-            R = (np.eye(3) +
-                 np.sin(omega_norm * theta) / omega_norm * omega_hat +
-                 (1 - np.cos(omega_norm * theta)) / (omega_norm ** 2) * np.dot(omega_hat, omega_hat))
-            
-            p = (np.eye(3) * theta +
-                 (1 - np.cos(omega_norm * theta)) / (omega_norm ** 2) * omega_hat +
-                 (theta - np.sin(omega_norm * theta) / omega_norm) / (omega_norm ** 2) * np.dot(omega_hat, omega_hat)).dot(v)
-            
-        if self.model.jnt_type[i] == 2:
-            R = np.eye(3)
-            p = theta * v
+
+        omega_hat = skew(omega)
+        R = (np.eye(3) +
+                np.sin(omega_norm * theta) / omega_norm * omega_hat +
+                (1 - np.cos(omega_norm * theta)) / (omega_norm ** 2) * np.dot(omega_hat, omega_hat))
+        
+        p = (np.eye(3) * theta +
+                (1 - np.cos(omega_norm * theta)) / (omega_norm ** 2) * omega_hat +
+                (theta - np.sin(omega_norm * theta) / omega_norm) / (omega_norm ** 2) * np.dot(omega_hat, omega_hat)).dot(v)
 
         return np.vstack((np.hstack((R, np.reshape(p, (3, 1)))), [0, 0, 0, 1]))
-        
-    
-    def fkine(self, i, xi, theta):
-        T = np.eye(4)
-        omega = xi[:3]
-        v = xi[3:]
-        
-        omega_hat = skew(omega)
-
-        expm_w = expm(omega_hat*theta)
-        g = (np.eye(3)*theta + (1-np.cos(theta))*omega
-        + (theta-np.sin(theta)) * np.matmul(omega,omega))
-        gv = np.matmul(g,v)
-        expm_s = np.concatenate((expm_w,gv), axis=1)
-        expm_s = np.concatenate((expm_s,[[0,0,0,1]]), axis=0)
-        T = np.matmul(T,expm_s)
-
-        return T
 
     def forward_kinematics(self, q):
         """
         q: 관절 각도 배열
         """
         
-        #=================4DOF=========================
-        # 초기 엔드 이펙터 좌표 (기준 좌표계에서의 위치)
-        # T_ = []
-        # T_.append(np.eye(4))
-
-        # T_.append(np.eye(4))
-        # T_[1][2,3] = 0.5
-        # T_[1][:3,:3] = Rot_x(90) @ Rot_z(-10) 
-
-        # T_.append(np.eye(4))
-        # z = np.array([[0,0.8,0]])
-        # T_[2][:3, 3] = T_[1][:3, 3] + T_[1][:3,:3] @ np.reshape(z,(3,))
-        # T_[2][:3,:3] = T_[1][:3,:3] @ Rot_z(-10)
-
-        # T_.append(np.eye(4))
-        # z = np.array([[0,1.0,0]])
-        # T_[3][:3,3] = T_[2][:3, 3] + T_[2][:3,:3] @ np.reshape(z,(3,))
-        # T_[3][:3,:3] = T_[2][:3,:3] @ Rot_z(-10)
-
-        # T_.append(np.eye(4))
-        # z = np.array([[0,0.35,0]])
-        # T_[4][:3,3] = T_[3][:3, 3] + T_[3][:3,:3] @ np.reshape(z,(3,))
-        # T_[4][:3,:3] = T_[3][:3,:3]
-
         #=================Open4DOF=========================
         T_ = []
         T_.append(np.eye(4))
@@ -192,7 +129,7 @@ class Kinematic:
 
         self.R_lnk = []
         self.P_lnk = []
-        for i in range(self.model.njnt + 1):
+        for i in range(4 + 1):
             self.R_lnk.append(T_[i][:3,:3])
             self.P_lnk.append(T_[i][:3,3])
 
@@ -204,9 +141,9 @@ class Kinematic:
     def get_jnt_axis(self):
         w,v = self.get_first_wv()
 
-        joint_axis = np.zeros((self.model.njnt, 3))
+        joint_axis = np.zeros((4, 3))
 
-        for i in range(self.model.njnt):
+        for i in range(4):
             joint_axis[i,:] = self.R_lnk[i] @ np.reshape(w[0],(3,))
 
         return joint_axis
@@ -219,7 +156,7 @@ class Kinematic:
         end_effector_pos: 엔드 이펙터 위치 (3x1 벡터) -> P_EE
         joint_types: 관절 타입 리스트 (0=프리스매틱, 1=회전) -> m.jnt_type
         """
-        num_joints = self.model.njnt
+        num_joints = 4
         
         # 선형 및 각 자코비안 초기화 (6 x N 자코비안)
         J_p = np.zeros((3, num_joints))
@@ -228,24 +165,9 @@ class Kinematic:
         for i in range(num_joints):
             joint_pos = joint_positions[i]
             joint_axis = joint_axes[i]
-            
-            if self.model.jnt_type[i] == 3:  # 회전 관절
-                J_p[:, i] = np.cross(joint_axis, (end_effector_pos - joint_pos))
-                J_r[:, i] = joint_axis
-            elif self.model.jnt_type[i] == 2:  # 프리스매틱 관절
-                J_p[:, i] = joint_axis
-                J_r[:, i] = np.zeros(3)
 
-        # for i in range(0,num_joints):
-        #     joint_pos = self.data.body_xpos[i + 1]
-        #     joint_axis = self.data.xaxis[i]
-            
-        #     if self.model.jnt_type[i] == 3:  # 회전 관절
-        #         J_p[:, i] = np.cross(joint_axis, (self.data.body_xpos[-1] - joint_pos))
-        #         J_r[:, i] = joint_axis
-        #     elif self.model.jnt_type[i] == 2:  # 프리스매틱 관절
-        #         J_p[:, i] = joint_axis
-        #         J_r[:, i] = np.zeros(3)
+            J_p[:, i] = np.cross(joint_axis, (end_effector_pos - joint_pos))
+            J_r[:, i] = joint_axis
         
         return J_p, J_r
     
