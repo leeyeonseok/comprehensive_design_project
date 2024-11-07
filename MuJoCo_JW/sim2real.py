@@ -8,17 +8,12 @@ import matplotlib.pyplot as plt
 # import rospy
 # from std_msgs.msg import Float32MultiArray
 
-xml_path = './MuJoCo_JW/model/scene.xml'
-m = mujoco_py.load_model_from_path(xml_path)
-sim = mujoco_py.MjSim(m)
-d = sim.data
-
 jnt = 4
 dxl_ids = [11, 12, 13, 14]
 dxl = Dynamixel(dxl_ids)
 joint_torq = np.zeros(jnt)
 
-traj_time = [4, 8, 12, 16]
+traj_time = [6, 12, 18, 26]
 linear_d = [None] * len(traj_time)
 angular_d = [None] * len(traj_time)
 qpos = [0] * jnt
@@ -28,7 +23,7 @@ T, pd, pvd, qvd, qpd, pe, quatd, quatv = [], [], [], [], [], [], [], []
 
 qpos_d = np.zeros(jnt)
 cnt, t = 0, 0
-timestep = 0.005
+timestep = 0
 
 K = Kinematic()
 
@@ -44,10 +39,10 @@ K = Kinematic()
 while t < traj_time[-1] + 2:
     start_time = time.time()
     
-    # qpos = dxl.get_qpos()
-    # qvel = dxl.get_qvel()
+    qpos = dxl.get_qpos()
+    qvel = dxl.get_qvel()
 
-    P_EE,R_EE,P_lnk,R_lnk = K.forward_kinematics(d.qpos)
+    P_EE,R_EE,P_lnk,R_lnk = K.forward_kinematics(qpos)
     jnt_axes = K.get_jnt_axis()
     J_p, J_r = K.get_jacobian(P_lnk, jnt_axes, P_EE)
     J_pr = np.vstack((J_p, J_r))
@@ -111,7 +106,7 @@ while t < traj_time[-1] + 2:
     elif t <= traj_time[2]:
         pos_d, vel_d, acc_d = linear_d[2].calculate_pva(t)
         quat_d, quatdot_d, quatddot_d = angular_d[2].calculate_pva_quat(t)
-    elif t <= traj_time[3]:
+    else:
         pos_d, vel_d, acc_d = linear_d[3].calculate_pva(t)
         quat_d, quatdot_d, quatddot_d = angular_d[3].calculate_pva_quat(t)
     
@@ -125,9 +120,9 @@ while t < traj_time[-1] + 2:
     null = np.eye(jnt) - np.linalg.pinv(J_pr) @ J_pr
     
     qvel_d = DLS_inverse(J_pr) @ np.reshape(total, (6,)) + null @ qvel
-    qpos_d = qpos_d + qvel_d * m.opt.timestep
+    qpos_d = qpos_d + qvel_d * timestep
 
-    joint_torq = 10 * (qpos_d - d.qpos) + 5 * (qvel_d - d.qvel)
+    joint_torq = 100 * (qpos_d - qpos) + 60 * (qvel_d - qvel)
     # joint_torq = [10 * (qpos_d[i] - qpos[i]) + 5 * (qvel_d[i] - qvel[i]) for i in range(jnt)]
     # torque_pub.publish(Float32MultiArray(data=joint_torq))
 
@@ -153,13 +148,9 @@ while t < traj_time[-1] + 2:
     print("time : ",t, "\t", "qpos   : ", qpos)
     print("time : ",t, "\t", "qpos_d : ", qpos_d)
     print("===============================================================================================================================")
-
+    timestep = time.time() - start_time
     t += timestep
-    print('time: ', time.time() - start_time)
-    for i in range(m.nu):
-        d.ctrl[i] = joint_torq[i]
-    
-    sim.step()
+    print('time: ', timestep)
     
 
 dxl.close_port()

@@ -8,7 +8,7 @@ class Dynamixel:
     def __init__(self, ids):
         # 통신 설정
         self.DEVICENAME = '/dev/ttyUSB0'  
-        self.BAUDRATE = 1000000
+        self.BAUDRATE = 4000000
         self.PROTOCOL_VERSION = 2.0       # Dynamixel 프로토콜 버전
 
         # 다이나믹셀 설정

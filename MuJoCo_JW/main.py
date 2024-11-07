@@ -16,7 +16,7 @@ viewer = mujoco_py.MjViewer(sim)
 
 #========================= Dynamixel load ==============================
 ids = [11, 12, 13, 14]
-dxl = Dynamixel(ids)
+# dxl = Dynamixel(ids)
 #========================= Define Parameters ===========================
 traj_time = [4, 8, 12, 16]
 cnt = 0
@@ -154,7 +154,7 @@ while d.time < traj_time[-1] + 2:
     # joint_torq = 10 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel)  # 100Hz  100, 100
     # joint_torq = 3 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel) # 50Hz  3, 20 40 50 끝까지 흔들리긴함
 
-    dxl.control_pos(d.qpos)
+    # dxl.control_pos(d.qpos)
 
     pd.append(pos_d)
     pvd.append(vel_d)
