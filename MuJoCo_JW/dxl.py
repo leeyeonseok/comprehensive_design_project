@@ -86,8 +86,8 @@ class Dynamixel:
         self.groupSyncWriteTorque.clearParam()
         
         for dxl_id, goal in zip(self.DXL_IDs, torque_values):
-            if goal < 0:
-                goal *= 3
+            # if goal < 0:
+            #     goal *= 3
             goal_torque = int(goal)
             param_goal_torque = [DXL_LOBYTE(goal_torque), DXL_HIBYTE(goal_torque)]
             self.groupSyncWriteTorque.addParam(dxl_id, param_goal_torque)
@@ -98,7 +98,7 @@ class Dynamixel:
         self.groupSyncWritePosition.clearParam()
         for dxl_id, goal in zip(self.DXL_IDs, goal_position):
             init_state = self.init_state[dxl_id]
-            goal = goal / pi * 2048 + init_state / pi * 2048
+            goal = goal / pi * 2048 #+ init_state / pi * 2048
             goal_pos = int(goal)
             param_goal_pos = [DXL_LOBYTE(DXL_LOWORD(goal_pos)),
                               DXL_HIBYTE(DXL_LOWORD(goal_pos)),
@@ -114,8 +114,8 @@ class Dynamixel:
             dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_POSITION)
             if dxl_present_position > 4000000:
                 dxl_present_position = dxl_present_position - 4294965248 - 2048
-            positions[num] = dxl_present_position / 2048 * pi #- self.init_state[dxl_id]
-        # 토크 제어시 self.init_state 제거
+            positions[num] = dxl_present_position / 2048 * pi - self.init_state[dxl_id] # 토크 제어시 self.init_state 제거
+        
         return positions
     
     def get_qvel(self):

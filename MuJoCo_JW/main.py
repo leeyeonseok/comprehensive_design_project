@@ -15,12 +15,8 @@ d = sim.data
 viewer = mujoco_py.MjViewer(sim)
 
 #========================= Dynamixel load ==============================
-# dxl = [None] * m.njnt
-# dxl[0] = Dynamixel(id=11)
-# dxl[1] = Dynamixel(id=12)
-# dxl[2] = Dynamixel(id=13)
-# dxl[3] = Dynamixel(id=14)
-# current = [None] * m.njnt
+ids = [11, 12, 13, 14]
+dxl = Dynamixel(ids)
 #========================= Define Parameters ===========================
 traj_time = [4, 8, 12, 16]
 cnt = 0
@@ -51,13 +47,12 @@ while d.time < traj_time[-1] + 2:
     # ========================================Kinematics: START===============================================
     K = Kinematic(sim)
     T.append(d.time)
-    # for i in range(m.njnt):
-    #     qpos[i] = dxl[i].get_qpos()
-    #     qvel[i] = dxl[i].get_qvel()
+    
+    # qpos = dxl.get_qpos()
     
     P_EE,R_EE,P_lnk,R_lnk = K.forward_kinematics(d.qpos)
     jnt_axes = K.get_jnt_axis()
-    J_p, J_r = K.get_jacobian(d.body_xpos[1:], d.xaxis, d.body_xpos[-1])
+    J_p, J_r = K.get_jacobian(P_lnk, jnt_axes, P_EE)
     # J_p, J_r = K.get_jacobian(P_lnk, jnt_axes, P_EE)
     J_pr = np.vstack((J_p, J_r))
 
@@ -72,34 +67,34 @@ while d.time < traj_time[-1] + 2:
     # ========================================Trajectory: START===============================================
     if cnt == 0:
         linear_d[0] = Trajectory(0,traj_time[0])
-        init_state = d.body_xpos[-1]
+        init_state = P_EE
         final_state = [0.248, 0, 0.1725]
         linear_d[0].get_coeff(init_state, final_state)
 
         linear_d[1] = Trajectory(traj_time[0], traj_time[1])
         init_state = linear_d[0].final_state
-        final_state = [-0.225, 0.225, 0.19]
+        final_state = [-0.152, 0.152, 0.19]
         linear_d[1].get_coeff(init_state, final_state)
 
         linear_d[2] = Trajectory(traj_time[1], traj_time[2])
         init_state = linear_d[1].final_state
-        final_state = [0.211, 0.211, 0.18]
+        final_state = [0.191, 0.191, 0.18]
         linear_d[2].get_coeff(init_state, final_state)
 
         linear_d[3] = Trajectory(traj_time[2], traj_time[3])
         init_state = linear_d[2].final_state
-        final_state = [-0.192, 0.192, 0.201]
+        final_state = [-0.232, 0.232, 0.161]
         linear_d[3].get_coeff(init_state, final_state)
     # ========================================================================================================
         angular_d[0] = Trajectory(0,traj_time[0])
-        init_state = quat_mj
+        init_state = quat_e
         final_rot = Rot_y(90)
         final_state = Rot2Quat(final_rot)
         angular_d[0].get_coeff_quat(init_state, final_state)
 
         angular_d[1] = Trajectory(traj_time[0],traj_time[1])
         init_state = angular_d[0].final_state
-        final_rot = final_rot @ Rot_x(225) # local coordinate
+        final_rot = final_rot @ Rot_x(-135) # local coordinate
         final_state = Rot2Quat(final_rot)
         angular_d[1].get_coeff_quat(init_state, final_state)    
 
@@ -127,7 +122,7 @@ while d.time < traj_time[-1] + 2:
     elif d.time <= traj_time[2]:
         pos_d, vel_d, acc_d = linear_d[2].calculate_pva(d.time)
         quat_d, quatdot_d, quatddot_d = angular_d[2].calculate_pva_quat(d.time)
-    elif d.time <= traj_time[3]:
+    else:
         pos_d, vel_d, acc_d = linear_d[3].calculate_pva(d.time)
         quat_d, quatdot_d, quatddot_d = angular_d[3].calculate_pva_quat(d.time)
     
@@ -155,16 +150,11 @@ while d.time < traj_time[-1] + 2:
     
     # joint_torq = 2000 * (qpos_d - d.qpos) + 1300 * (qvel_d - d.qvel)
     # joint_torq = 20 * (qpos_d - d.qpos) + 10 * (qvel_d - d.qvel)  # 200Hz  50, 50
-    joint_torq = 0 * (qpos_d - d.qpos) + 1 * (qvel_d - d.qvel)  # 10Hz  100, 100
+    joint_torq = 20 * (qpos_d - d.qpos) + 10 * (qvel_d - d.qvel)  # 10Hz  100, 100
     # joint_torq = 10 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel)  # 100Hz  100, 100
     # joint_torq = 3 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel) # 50Hz  3, 20 40 50 끝까지 흔들리긴함
 
-    # for i in range(4):
-    #     current[i] = 30 * (qpos_d[i] - dxl[i].get_qpos()) + 30 * (qvel_d[i] - dxl[i].get_qvel())
-    #     if i == 1:
-    #         dxl[i].control(1.5 * current[i]) 
-    #     else:
-    #         dxl[i].control(current[i]) 
+    dxl.control_pos(d.qpos)
 
     pd.append(pos_d)
     pvd.append(vel_d)
