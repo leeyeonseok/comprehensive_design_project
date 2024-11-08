@@ -40,7 +40,7 @@ while t < traj_time[-1] + 2:
     start_time = time.time()
     
     qpos = dxl.get_qpos()
-    qvel = dxl.get_qvel()
+    # qvel = dxl.get_qvel()
 
     P_EE,R_EE,P_lnk,R_lnk = K.forward_kinematics(qpos)
     jnt_axes = K.get_jnt_axis()
@@ -112,8 +112,8 @@ while t < traj_time[-1] + 2:
     
     quat_d /= (np.linalg.norm(quat_d) + 1e-8)
 
-    vel_CLIK = vel_d + 50 * (pos_d - P_EE)
-    quatdot_CLIK = quatdot_d + 50 * (quat_d - quat_e)
+    vel_CLIK = vel_d + 40 * (pos_d - P_EE) # / np.linalg.norm(P_EE) * np.linalg.norm(qpos) 
+    quatdot_CLIK = quatdot_d + 40 * (quat_d - quat_e)
 
     omega = Quat2Omega(quat_d, quatdot_CLIK)
     total = np.hstack((vel_CLIK,omega))
@@ -122,15 +122,15 @@ while t < traj_time[-1] + 2:
     qvel_d = DLS_inverse(J_pr) @ np.reshape(total, (6,)) + null @ qvel
     qpos_d = qpos_d + qvel_d * timestep
 
-    joint_torq = 100 * (qpos_d - qpos) + 60 * (qvel_d - qvel)
+    # joint_torq = 20 * (qpos_d - qpos) + 10 * (qvel_d - qvel)
     # joint_torq = [10 * (qpos_d[i] - qpos[i]) + 5 * (qvel_d[i] - qvel[i]) for i in range(jnt)]
     # torque_pub.publish(Float32MultiArray(data=joint_torq))
 
     if abs(qpos_d - qpos).any() > pi/3 and t > 1:
         break
 
-    # dxl.control_pos(1 * qpos_d)
-    dxl.control_torque(joint_torq)
+    dxl.control_pos(qpos_d)
+    # dxl.control_torque(1.5 * joint_torq)
 
     T.append(t)
     pd.append(pos_d)

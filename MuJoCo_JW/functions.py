@@ -118,6 +118,9 @@ def Rot2Quat(R):
         q[2] = (R[1, 2] + R[2, 1]) / s
         q[3] = 0.25 * s
     
+    if q[0] < 0:
+        q = -q
+        
     return q
 
 def Quat2Rot(quat):

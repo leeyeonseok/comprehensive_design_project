@@ -86,8 +86,8 @@ class Dynamixel:
         self.groupSyncWriteTorque.clearParam()
         
         for dxl_id, goal in zip(self.DXL_IDs, torque_values):
-            # if goal < 0:
-            #     goal *= 3
+            if goal < 0:
+                goal *= 2
             goal_torque = int(goal)
             param_goal_torque = [DXL_LOBYTE(goal_torque), DXL_HIBYTE(goal_torque)]
             self.groupSyncWriteTorque.addParam(dxl_id, param_goal_torque)
