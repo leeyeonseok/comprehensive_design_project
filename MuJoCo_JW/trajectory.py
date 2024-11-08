@@ -9,10 +9,10 @@ class Trajectory:
         self.init_time = init_time
         self.excuted_once = False
 
-    def time_mat(self, moving_time):
-        tmat = np.array([[   moving_time**5,    moving_time**4,   moving_time**3,   moving_time**2, moving_time**1, 1],
-                         [ 5*moving_time**4,  4*moving_time**3, 3*moving_time**2, 2*moving_time**1,              1, 0],
-                         [20*moving_time**3, 12*moving_time**2, 6*moving_time**1,                2,              0, 0]])
+    def time_mat(self, current_time):
+        tmat = np.array([[   current_time**5,    current_time**4,   current_time**3,   current_time**2, current_time**1, 1],
+                         [ 5*current_time**4,  4*current_time**3, 3*current_time**2, 2*current_time**1,              1, 0],
+                         [20*current_time**3, 12*current_time**2, 6*current_time**1,                2,              0, 0]])
         
         return tmat
     
@@ -37,9 +37,9 @@ class Trajectory:
             self.excuted_once = True
 
 
-    def calculate_pva(self, moving_time):   # calculate pose, velocity, acceleration       
-        if moving_time <= self.final_time:
-            pva = self.time_mat(moving_time) @ self.coeff    # 3x3 matrix
+    def calculate_pva(self, current_time):   # calculate pose, velocity, acceleration       
+        if current_time <= self.final_time:
+            pva = self.time_mat(current_time) @ self.coeff    # 3x3 matrix
         else:
             pva = self.time_mat(self.final_time) @ self.coeff
         
@@ -75,9 +75,9 @@ class Trajectory:
             self.coeff_quat = np.linalg.inv(mat) @ target    # 6x4 matrix
             self.excuted_once = True
 
-    def calculate_pva_quat(self, moving_time):   # calculate pose, velocity, acceleration
-        if moving_time <= self.final_time:
-            pva = self.time_mat(moving_time) @ self.coeff_quat    # 3x4 matrix 
+    def calculate_pva_quat(self, current_time):   # calculate pose, velocity, acceleration
+        if current_time <= self.final_time:
+            pva = self.time_mat(current_time) @ self.coeff_quat    # 3x4 matrix 
         else:
             pva = self.time_mat(self.final_time) @ self.coeff_quat
 

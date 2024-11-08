@@ -51,49 +51,49 @@ while t < traj_time[-1] + 2:
     quat_e /= (np.linalg.norm(quat_e) + 1e-8)
 
     if cnt == 0:
-        linear_d[0] = Trajectory(0,traj_time[0]-1)
+        linear_d[0] = Trajectory(0,traj_time[0])
         init_state = P_EE
-        final_state = [0.248, 0, 0.1725]
+        final_state = [0.168, 0, 0.1525]
         linear_d[0].get_coeff(init_state, final_state)
 
-        linear_d[1] = Trajectory(traj_time[0], traj_time[1]-1)
+        linear_d[1] = Trajectory(traj_time[0], traj_time[1])
         init_state = linear_d[0].final_state
-        final_state = [-0.182, 0.182, 0.19]
+        final_state = [-0.202, 0.202, 0.19]
         linear_d[1].get_coeff(init_state, final_state)
 
-        linear_d[2] = Trajectory(traj_time[1], traj_time[2]-1)
+        linear_d[2] = Trajectory(traj_time[1], traj_time[2])
         init_state = linear_d[1].final_state
         final_state = [0.191, 0.191, 0.18]
         linear_d[2].get_coeff(init_state, final_state)
 
-        linear_d[3] = Trajectory(traj_time[2], traj_time[3]-1)
+        linear_d[3] = Trajectory(traj_time[2], traj_time[3])
         init_state = linear_d[2].final_state
-        final_state = [-0.232, 0.232, 0.161]
+        final_state = [-0.212, 0.212, 0.161]
         linear_d[3].get_coeff(init_state, final_state)
     # ========================================================================================================
-        angular_d[0] = Trajectory(0,traj_time[0]-1)
+        angular_d[0] = Trajectory(0,traj_time[0])
         init_state = quat_e
         final_rot = Rot_y(90)
         final_state = Rot2Quat(final_rot)
         angular_d[0].get_coeff_quat(init_state, final_state)
 
-        angular_d[1] = Trajectory(traj_time[0],traj_time[1]-1)
+        angular_d[1] = Trajectory(traj_time[0],traj_time[1])
         init_state = angular_d[0].final_state
         final_rot = final_rot @ Rot_x(-135) # local coordinate
         final_state = Rot2Quat(final_rot)
         angular_d[1].get_coeff_quat(init_state, final_state)    
 
-        angular_d[2] = Trajectory(traj_time[1],traj_time[2]-1)
+        angular_d[2] = Trajectory(traj_time[1],traj_time[2])
         init_state = angular_d[1].final_state
         final_rot = final_rot @ Rot_x(89) # local coordinate
         final_state = Rot2Quat(final_rot)
         angular_d[2].get_coeff_quat(init_state, final_state)  
 
-        angular_d[3] = Trajectory(traj_time[2],traj_time[3]-1)
+        angular_d[3] = Trajectory(traj_time[2],traj_time[3])
         init_state = angular_d[2].final_state
         final_rot = final_rot @ Rot_x(-89) # local coordinate
         final_state = Rot2Quat(final_rot)
-        angular_d[3].get_coeff_quat(init_state, final_state) 
+        angular_d[3].get_coeff_quat(init_state, final_state)  
 
         cnt = 1
 
@@ -112,7 +112,7 @@ while t < traj_time[-1] + 2:
     
     quat_d /= (np.linalg.norm(quat_d) + 1e-8)
 
-    vel_CLIK = vel_d + 40 * (pos_d - P_EE) # / np.linalg.norm(P_EE) * np.linalg.norm(qpos) 
+    vel_CLIK = vel_d + 40 * (pos_d - P_EE)
     quatdot_CLIK = quatdot_d + 40 * (quat_d - quat_e)
 
     omega = Quat2Omega(quat_d, quatdot_CLIK)

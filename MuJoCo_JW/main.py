@@ -1,7 +1,6 @@
 import mujoco_py
 import os
-from functions import *
-from kinematic import Kinematic
+from kinematic import *
 from trajectory import Trajectory
 import matplotlib.pyplot as plt
 from dxl import Dynamixel
@@ -16,7 +15,7 @@ d = sim.data
 viewer = mujoco_py.MjViewer(sim)
 
 #========================= Dynamixel load ==============================
-ids = [11, 12, 13, 14]
+# ids = [11, 12, 13, 14]
 # dxl = Dynamixel(ids)
 #========================= Define Parameters ===========================
 traj_time = [4, 8, 12, 16]
@@ -37,14 +36,10 @@ while d.time < traj_time[-1] + 2:
     # ========================================Kinematics: START===============================================
     K = Kinematic(sim)
     T.append(d.time)
-    
-    # qpos = dxl.get_qpos()
-    #qvel = dxl.get_qvel()
-    
+
     P_EE,R_EE,P_lnk,R_lnk = K.forward_kinematics(d.qpos)
     jnt_axes = K.get_jnt_axis()
     J_p, J_r = K.get_jacobian(P_lnk, jnt_axes, P_EE)
-    # J_p, J_r = K.get_jacobian(P_lnk, jnt_axes, P_EE)
     J_pr = np.vstack((J_p, J_r))
 
     quat_e = Rot2Quat(R_EE)
@@ -124,6 +119,7 @@ while d.time < traj_time[-1] + 2:
     # ==========================================Trajectory: END===============================================
     vel_CLIK = vel_d + 50 * (pos_d - P_EE)
     quatdot_CLIK = quatdot_d + 50 * (quat_d - quat_e)
+    
     del_quat = mul_quat(quat_d, inverse_quat(quat_e))
     angle_error = 2 * np.arctan2(np.linalg.norm(del_quat[1:]), del_quat[0])  # 각도
     axis_error = del_quat[1:] / (np.linalg.norm(del_quat[1:]) + 10 ** (-5))  # 축
@@ -171,8 +167,6 @@ while d.time < traj_time[-1] + 2:
 
     for i in range(m.nu):
         d.ctrl[i] = joint_torq[i]
-    
-    # dxl.control_pos(d.qpos)
 
     sim.step()
     viewer.render()
