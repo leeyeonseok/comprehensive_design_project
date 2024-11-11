@@ -1,5 +1,6 @@
 import numpy as np
 from math import pi
+from scipy.spatial.transform import Rotation as R
 
 def Rot_x(q):
     q = np.deg2rad(q)
@@ -86,9 +87,9 @@ def Rot2EulerZXY(rot):
     
     return euler.T
 
-def Rot2Quat(R):
+def Rot2Quat(Rot):
     # Calculate the trace of the matrix
-    trace = np.trace(R)
+    trace = np.trace(Rot)
     
     # Initialize quaternion array
     q = np.zeros(4)
@@ -96,31 +97,28 @@ def Rot2Quat(R):
     if trace > 0:
         s = 2.0 * np.sqrt(trace + 1.0)
         q[0] = 0.25 * s
-        q[1] = (R[2, 1] - R[1, 2]) / s
-        q[2] = (R[0, 2] - R[2, 0]) / s
-        q[3] = (R[1, 0] - R[0, 1]) / s
-    elif (R[0, 0] > R[1, 1]) and (R[0, 0] > R[2, 2]):
-        s = 2.0 * np.sqrt(1.0 + R[0, 0] - R[1, 1] - R[2, 2])
-        q[0] = (R[2, 1] - R[1, 2]) / s
+        q[1] = (Rot[2, 1] - Rot[1, 2]) / s
+        q[2] = (Rot[0, 2] - Rot[2, 0]) / s
+        q[3] = (Rot[1, 0] - Rot[0, 1]) / s
+    elif (Rot[0, 0] > Rot[1, 1]) and (Rot[0, 0] > Rot[2, 2]):
+        s = 2.0 * np.sqrt(1.0 + Rot[0, 0] - Rot[1, 1] - Rot[2, 2])
+        q[0] = (Rot[2, 1] - Rot[1, 2]) / s
         q[1] = 0.25 * s
-        q[2] = (R[0, 1] + R[1, 0]) / s
-        q[3] = (R[0, 2] + R[2, 0]) / s
-    elif R[1, 1] > R[2, 2]:
-        s = 2.0 * np.sqrt(1.0 + R[1, 1] - R[0, 0] - R[2, 2])
-        q[0] = (R[0, 2] - R[2, 0]) / s
-        q[1] = (R[0, 1] + R[1, 0]) / s
+        q[2] = (Rot[0, 1] + Rot[1, 0]) / s
+        q[3] = (Rot[0, 2] + Rot[2, 0]) / s
+    elif Rot[1, 1] > Rot[2, 2]:
+        s = 2.0 * np.sqrt(1.0 + Rot[1, 1] - Rot[0, 0] - Rot[2, 2])
+        q[0] = (Rot[0, 2] - Rot[2, 0]) / s
+        q[1] = (Rot[0, 1] + Rot[1, 0]) / s
         q[2] = 0.25 * s
-        q[3] = (R[1, 2] + R[2, 1]) / s
+        q[3] = (Rot[1, 2] + Rot[2, 1]) / s
     else:
-        s = 2.0 * np.sqrt(1.0 + R[2, 2] - R[0, 0] - R[1, 1])
-        q[0] = (R[1, 0] - R[0, 1]) / s
-        q[1] = (R[0, 2] + R[2, 0]) / s
-        q[2] = (R[1, 2] + R[2, 1]) / s
+        s = 2.0 * np.sqrt(1.0 + Rot[2, 2] - Rot[0, 0] - Rot[1, 1])
+        q[0] = (Rot[1, 0] - Rot[0, 1]) / s
+        q[1] = (Rot[0, 2] + Rot[2, 0]) / s
+        q[2] = (Rot[1, 2] + Rot[2, 1]) / s
         q[3] = 0.25 * s
-    
-    if q[0] < 0:
-        q = -q
-        
+
     return q
 
 def Quat2Rot(quat):

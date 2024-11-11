@@ -1,5 +1,5 @@
 <mujoco model="scene">
-    <include file="Mani.xml"/>
+    <include file="AT_arm.xml"/>
     <visual>
         <global fovy="45" linewidth="2" glow="0.3"/>
         <quality shadowsize="4096" numslices="28"/>

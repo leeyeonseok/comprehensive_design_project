@@ -1,4 +1,4 @@
-<mujoco model="Open Manipulator">
+<mujoco model="AT arm">
     <compiler inertiafromgeom="true" angle="degree"/>
     <option timestep="0.005" gravity="0 0 -9.81" cone="elliptic" jacobian="auto" solver="Newton" impratio="1.0"/>
     <!--  collision="predefined"  -->
@@ -19,26 +19,32 @@
             <geom type="cylinder" pos="0 0 0.04" euler="0 0 0" mass="0.082" size="0.0128 0.004" rgba="1 0 0.5 1"/>
             <!--  Link2  -->
             <body name="link2" pos="0 0 0.0765" euler="90 0 90">
-                <joint name="L2" pos="0 0 0" type="hinge" axis="0 0 1" limited="true" range="-150 150"/>
-                <geom type="cylinder" pos="0 0.064 0" euler="-90 0 0" size="0.012 0.064" rgba="0.3 0.6 0 1"/>
+                <joint name="L2" pos="0 0 0" type="hinge" axis="0 0 1" limited="false" range="-150 150"/>
+                <geom type="cylinder" pos="0 0.110 0" euler="-90 0 0" size="0.012 0.110" rgba="0.3 0.6 0 1"/>
                 <geom type="cylinder" pos="0 0 0" euler="0 0 0" mass="0.082" size="0.008 0.014" rgba="1 0 0.5 1"/>
-                <geom type="box" pos="0.008 0.128 0" euler="0 0 0" size="0.024 0.012 0.012" rgba="0.3 0.6 0 1"/>
+                <geom type="box" pos="0.011 0.220 0" euler="0 0 0" size="0.024 0.012 0.012" rgba="0.3 0.6 0 1"/>
                 <!--  Link3 -->
-                <body name="link3" pos="0.024 0.128 0" euler="0 0 -180">
-                    <joint name="L3" pos="0 0 0" type="hinge" axis="0 0 1" limited="true" range="-200 100"/>
-                    <geom type="cylinder" pos="0 0.062 0" euler="-90 0 0" mass="0.04"  size="0.012 0.062" rgba="0.3 0.6 0 1"/>
+                <body name="link3" pos="0.024 0.220 0" euler="0 0 -180">
+                    <joint name="L3" pos="0 0 0" type="hinge" axis="0 0 1" limited="false" range="-200 100"/>
+                    <geom type="cylinder" pos="0 0.111875 0" euler="-90 0 0" mass="0.04"  size="0.012 0.111875" rgba="0.3 0.6 0 1"/>
                     <geom type="cylinder" pos="0 0 0" euler="0 0 0" mass="0.082" size="0.008 0.014" rgba="1 0 0.5 1"/>
                     <!--  Link4 -->
-                    <body name="link4" pos="0 0.124 0" euler="0 0 0">
-                        <joint name="L4" pos="0 0 0" type="hinge" axis="0 0 1" limited="true" range="-160 160"/>
-                        <geom type="box" pos="0 0.024 0" euler="0 0 0" mass="0.04" size="0.018 0.018 0.026" rgba="0.5 0.6 0.3 1"/>
+                    <body name="link4" pos="0 0.22375 0" euler="0 0 0">
+                        <joint name="L4" pos="0 0 0" type="hinge" axis="0 0 1" limited="false" range="-160 160"/>
+                        <geom type="cylinder" pos="0 0.02 0" euler="-90 0 0" mass="0.01" size="0.012 0.018" rgba="0.3 0.6 0 1"/>
                         <geom type="cylinder" pos="0 0 0" euler="0 0 0" mass="0.082" size="0.008 0.014" rgba="1 0 0.5 1"/>
-                        <!--  Fingers -->
-                        <body name="fingers" pos="0 0.1066 0" euler="-90 0 0">
-                            <!-- <geom type="box" pos="0 0 -0.04" euler="0 0 0" size="0.02 0.0888 0.02" rgba="0.5 0.6 0.3 1"/>
-                            <geom type="box" pos="0 0 0.04" euler="0 0 0" size="0.02 0.0888 0.02" rgba="0.5 0.6 0.3 1"/> -->
-                            <geom type="sphere" pos="0 0 0" euler="0 0 0" mass="0.2" size="0.002" rgba="0.5 0.6 0.3 1"/>
-                            <site name="EE" type="sphere" pos="0 0 0" size="0.004" rgba="1 0 0 1"/>
+                        <!-- Link5 -->
+                        <body name="link5" pos="0 0.04 0" euler="0 -90 0">
+                            <joint name="L5" pos="0 0 0" type="hinge" axis="0 0 1" limited="false" range="-160 160"/>
+                            <geom type="box" pos="0 0.02 0" euler="0 0 0" mass="0.02" size="0.02 0.012 0.012" rgba="0.5 0.6 0.3 1"/>
+                            <geom type="cylinder" pos="0 0 0" euler="0 0 0" mass="0.082" size="0.008 0.012" rgba="1 0 0.5 1"/>
+                            <!--  Fingers -->
+                            <body name="fingers" pos="0 0.048 0" euler="-90 0 90">
+                                <!-- <geom type="box" pos="0 0 -0.04" euler="0 0 0" size="0.02 0.0888 0.02" rgba="0.5 0.6 0.3 1"/>
+                                <geom type="box" pos="0 0 0.04" euler="0 0 0" size="0.02 0.0888 0.02" rgba="0.5 0.6 0.3 1"/> -->
+                                <geom type="sphere" pos="0 0 0" euler="0 0 0" mass="0.2" size="0.002" rgba="0.5 0.6 0.3 1"/>
+                                <site name="EE" type="sphere" pos="0 0 0" size="0.004" rgba="1 0 0 1"/>
+                            </body>
                         </body>
                     </body>
                 </body>
@@ -50,6 +56,7 @@
         <motor joint="L2" name="link2" gear="1" ctrllimited="true" ctrlrange="-1193 1193"/>
         <motor joint="L3" name="link3" gear="1" ctrllimited="true" ctrlrange="-1193 1193"/>
         <motor joint="L4" name="link4" gear="1" ctrllimited="true" ctrlrange="-1193 1193"/>
+        <motor joint="L5" name="link5" gear="1" ctrllimited="true" ctrlrange="-1193 1193"/>
         <!-- <motor joint="F1" name="finger1" gear="1" ctrllimited="true" ctrlrange="-250 250"/>
         <motor joint="F2" name="finger2" gear="1" ctrllimited="true" ctrlrange="-250 250"/> -->
     </actuator>

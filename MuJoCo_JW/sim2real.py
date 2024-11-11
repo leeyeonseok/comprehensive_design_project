@@ -18,6 +18,7 @@ linear_d = [None] * len(traj_time)
 angular_d = [None] * len(traj_time)
 qpos = [0] * jnt
 qvel = [0] * jnt
+quat_e_pre = [1, 0, 0, 0]
 
 T, pd, pvd, qvd, qpd, pe, quatd, quatv = [], [], [], [], [], [], [], []
 
@@ -48,7 +49,9 @@ while t < traj_time[-1] + 2:
     J_pr = np.vstack((J_p, J_r))
 
     quat_e = Rot2Quat(R_EE)
-    quat_e /= (np.linalg.norm(quat_e) + 1e-8)
+    if np.dot(quat_e,quat_e_pre) < 0:
+        quat_e = -quat_e
+    quat_e_pre = quat_e
 
     if cnt == 0:
         linear_d[0] = Trajectory(0,traj_time[0])

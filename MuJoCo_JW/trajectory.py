@@ -54,7 +54,7 @@ class Trajectory:
             self.angle_diff = mul_quat(inverse_quat(init_state), final_state)
             self.final_state = final_state
 
-            if self.angle_diff[0] < 0:
+            if np.dot(init_state, self.final_state) < 0:
                 self.final_state = -final_state
                 self.angle_diff = mul_quat(inverse_quat(init_state), self.final_state)
             
