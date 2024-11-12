@@ -47,6 +47,7 @@ while d.time < traj_time[-1] + 2:
         quat_e = -quat_e
     quat_e_pre = quat_e
 
+    P_EE_mj = d.body_xpos[-1]
     quat_mj = d.body_xquat[-1]
     R_EE_mj = np.reshape(d.body_xmat[-1], (3,3))
     # ==========================================Kinematics: END===============================================
@@ -156,9 +157,9 @@ while d.time < traj_time[-1] + 2:
 
     print("===============================================================================================================================")
     print(d.time, "\t", "joint_torque : ", joint_torq)
-    print(d.time, "\t", "P_EE : ", d.body_xpos[-1], "\t", P_EE)   
+    print(d.time, "\t", "P_EE : ", P_EE_mj, "\t", P_EE)   
     print(d.time, "\t", "qpos_d : ", qpos_d)
-    print(d.time, "\t", "pos_d - P_EE : ", pos_d - d.body_xpos [-1])
+    print(d.time, "\t", "pos_d - P_EE : ", pos_d - P_EE)
     print(d.time, "\t", "quat_e : ", quat_mj, "\t", quat_e) 
     print(d.time, "\t", "Rot_EE : ", R_EE)
     print(d.time, "\t", "Rot_mj : ", R_EE_mj)
