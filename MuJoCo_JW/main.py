@@ -55,22 +55,22 @@ while d.time < traj_time[-1] + 2:
     if cnt == 0:
         linear_d[0] = Trajectory(0,traj_time[0])
         init_state = P_EE
-        final_state = [0.375, 0, 0.1525]
+        final_state = [0.375, 0, 0.2525]
         linear_d[0].get_coeff(init_state, final_state)
 
         linear_d[1] = Trajectory(traj_time[0], traj_time[1])
         init_state = linear_d[0].final_state
-        final_state = [0.535, 0, 0.0425]
+        final_state = [0.127, 0, 0.4175]
         linear_d[1].get_coeff(init_state, final_state)
 
         linear_d[2] = Trajectory(traj_time[1], traj_time[2])
         init_state = linear_d[1].final_state
-        final_state = [0.375, 0, 0.245]
+        final_state = [0.275, 0.275, 0.245]
         linear_d[2].get_coeff(init_state, final_state)
 
         linear_d[3] = Trajectory(traj_time[2], traj_time[3])
         init_state = linear_d[2].final_state
-        final_state = [0.127, 0, 0.4175]
+        final_state = [-0.287, 0.287, 0.2175]
         linear_d[3].get_coeff(init_state, final_state)
     # ========================================================================================================
         angular_d[0] = Trajectory(0,traj_time[0])
@@ -87,13 +87,13 @@ while d.time < traj_time[-1] + 2:
 
         angular_d[2] = Trajectory(traj_time[1],traj_time[2])
         init_state = angular_d[1].final_state
-        final_rot = final_rot  # local coordinate
+        final_rot = final_rot @ Rot_x(-45) # local coordinate
         final_state = Rot2Quat(final_rot)
         angular_d[2].get_coeff_quat(init_state, final_state)  
 
         angular_d[3] = Trajectory(traj_time[2],traj_time[3])
         init_state = angular_d[2].final_state
-        final_rot = final_rot @ Rot_y(-10) # local coordinate
+        final_rot = final_rot @ Rot_x(-90) # local coordinate
         final_state = Rot2Quat(final_rot)
         angular_d[3].get_coeff_quat(init_state, final_state)  
 
@@ -131,7 +131,7 @@ while d.time < traj_time[-1] + 2:
     total = np.hstack((vel_CLIK,omega))
     null = np.eye(5) - np.linalg.pinv(J_pr) @ J_pr
     
-    qvel_d = DLS_inverse(J_pr) @ np.reshape(total, (6,)) + null @ d.qvel
+    qvel_d = SVD_DLS_inverse(J_pr) @ np.reshape(total, (6,)) + null @ d.qvel
 
 
     qpos_d = qpos_d + qvel_d * m.opt.timestep
@@ -145,7 +145,7 @@ while d.time < traj_time[-1] + 2:
     pvd.append(vel_d)
     qvd.append(qvel_d)
     qpd.append(qpos_d)
-    pe.append(d.body_xpos[-1])
+    pe.append(P_EE)
     quatd.append(quat_d)
     tq0.append(joint_torq[0])
     tq1.append(joint_torq[1])
@@ -155,14 +155,14 @@ while d.time < traj_time[-1] + 2:
     quatv.append(quatdot_d)
 
     print("===============================================================================================================================")
-    # print(d.time, "\t", "joint_torque : ", joint_torq)
-    # print(d.time, "\t", "P_EE : ", d.body_xpos[-1], "\t", P_EE)   
-    # print(d.time, "\t", "qpos_d : ", qpos_d)
-    # print(d.time, "\t", "pos_d - P_EE : ", pos_d - d.body_xpos [-1])
-    # print(d.time, "\t", "quat_e : ", quat_mj, "\t", quat_e) 
-    # print(d.time, "\t", "Rot_EE : ", R_EE)
-    # print(d.time, "\t", "Rot_mj : ", R_EE_mj)
-    # print(d.time, "\t", "angle diff : ", angular_d[1].angle_diff, angular_d[2].angle_diff, angular_d[3].angle_diff)
+    print(d.time, "\t", "joint_torque : ", joint_torq)
+    print(d.time, "\t", "P_EE : ", d.body_xpos[-1], "\t", P_EE)   
+    print(d.time, "\t", "qpos_d : ", qpos_d)
+    print(d.time, "\t", "pos_d - P_EE : ", pos_d - d.body_xpos [-1])
+    print(d.time, "\t", "quat_e : ", quat_mj, "\t", quat_e) 
+    print(d.time, "\t", "Rot_EE : ", R_EE)
+    print(d.time, "\t", "Rot_mj : ", R_EE_mj)
+    print(d.time, "\t", "angle diff : ", angular_d[1].angle_diff, angular_d[2].angle_diff, angular_d[3].angle_diff)
     print("===============================================================================================================================")
 
     for i in range(m.nu):
@@ -174,45 +174,46 @@ while d.time < traj_time[-1] + 2:
 # for i in range(4):
 #     dxl[i].close_port()
 
-# plt.subplot(321)
-# plt.plot(T,pe)
-# plt.title("P_EE")
-# plt.grid()
-
-# plt.subplot(322)
-# plt.plot(T,qvd)
-# plt.title("qvel_d")
-# plt.grid()
-
-# plt.subplot(323)
-# plt.plot(T,qpd)
-# plt.title("qpos_d")
-# plt.grid()
-
-# plt.subplot(324)
-# plt.plot(T,pvd)
-# plt.title("vel_d")
-# plt.grid()
-
-# plt.subplot(325)
-# plt.plot(T,quatd)
-# plt.title("quat_d")
-# plt.grid()
-
-# plt.subplot(326)
-# plt.plot(T,quatv)
-# plt.title("quatdot_d")
-# plt.grid()
-
-print("max torque : ", np.max([tq0,tq1,tq2,tq3,tq4]))
-plt.plot(T,tq0, label="Joint1")
-plt.plot(T,tq1, label="Joint2")
-plt.plot(T,tq2, label="Joint3")
-plt.plot(T,tq3, label="Joint4")
-plt.plot(T,tq4, label="Joint5")
-plt.title("joint torq")
-plt.legend(loc='best')
+plt.subplot(321)
+plt.plot(T,pe)
+plt.title("P_EE")
 plt.grid()
+
+plt.subplot(322)
+plt.plot(T,qvd)
+plt.title("qvel_d")
+plt.grid()
+
+plt.subplot(323)
+plt.plot(T,qpd)
+plt.title("qpos_d")
+plt.grid()
+
+plt.subplot(324)
+plt.plot(T,pvd)
+plt.title("vel_d")
+plt.grid()
+
+plt.subplot(325)
+plt.plot(T,quatd)
+plt.title("quat_d")
+plt.grid()
+
+plt.subplot(326)
+plt.plot(T,quatv)
+plt.title("quatdot_d")
+plt.grid()
+
+# print("max torque : ", np.max([tq0,tq1,tq2,tq3,tq4]))
+# plt.plot(T,tq0, label="Joint1")
+# plt.plot(T,tq1, label="Joint2")
+# plt.plot(T,tq2, label="Joint3")
+# plt.plot(T,tq3, label="Joint4")
+# plt.plot(T,tq4, label="Joint5")
+# plt.title("joint torq")
+# plt.legend(loc='best')
+# plt.grid()
+
 plt.show()
 
 

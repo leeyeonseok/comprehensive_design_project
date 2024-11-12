@@ -17,6 +17,7 @@ class Kinematic:
         #     q.append(self.data.body_xpos[i])
         
         #==================Open4DOF========================
+        self.DOF = 4
         w = np.array([[0, 0, 1],
                       [0,-1, 0],
                       [0,-1, 0],
@@ -26,8 +27,9 @@ class Kinematic:
                       np.array([0, 0, 0.0765]).T,
                       np.array([0, 0, 0.0765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.128, 0]).T,
                       np.array([0, 0, 0.0765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.128, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.124, 0]).T])
-
-        #==================Open5DOF========================
+        
+        #==================AT 5DOF========================
+        # self.DOF = 5
         # w = np.array([[ 0, 0, 1],
         #               [ 0,-1, 0],
         #               [ 0,-1, 0],
@@ -35,10 +37,10 @@ class Kinematic:
         #               [ 0, 0, 1]])
         
         # q = np.array([np.array([0, 0, 0]).T,
-        #               np.array([0, 0, 0.306]).T,
-        #               np.array([0, 0, 0.306]).T + Rot_x(90) @ Rot_z(40) @ np.array([0.096, 0.512, 0]).T,
-        #               np.array([0, 0, 0.306]).T + Rot_x(90) @ Rot_z(40) @ np.array([0.096, 0.512, 0]).T + Rot_x(90) @ Rot_z(40) @ Rot_z(-40) @ np.array([0, 0.496, 0]).T,
-        #               np.array([0, 0, 0.306]).T + Rot_x(90) @ Rot_z(40) @ np.array([0.096, 0.512, 0]).T + Rot_x(90) @ Rot_z(40) @ Rot_z(-40) @ np.array([0, 0.496, 0]).T + Rot_x(90) @ Rot_z(40) @ Rot_z(-40) @ Rot_z(-40) @ np.array([0, 0.12, 0]).T])
+        #               np.array([0, 0, 0.765]).T,
+        #               np.array([0, 0, 0.765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.22, 0]).T,
+        #               np.array([0, 0, 0.765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.22, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.22375, 0]).T,
+        #               np.array([0, 0, 0.765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.22, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.22375, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.4, 0]).T])
         
         v = -np.cross(w, q)
         return w,v
@@ -88,33 +90,32 @@ class Kinematic:
         T_[4][:3,3] = T_[3][:3, 3] + T_[3][:3,:3] @ np.reshape(z,(3,))
         T_[4][:3,:3] = T_[3][:3,:3] @ Rot_x(-90)
         
-        #=================Open5DOF=========================
+        #=================AT 5DOF=========================
         # T_ = []
         # T_.append(np.eye(4))
 
         # T_.append(np.eye(4))
-        # T_[1][2,3] = 0.306
-        # T_[1][:3,:3] = Rot_x(90) @ Rot_z(40) 
+        # T_[1][2,3] = 0.0765
+        # T_[1][:3,:3] = Rot_x(90) @ Rot_z(90) 
 
         # T_.append(np.eye(4))
-        # z = np.array([[0.096,0.512,0]])
+        # z = np.array([[0.024,0.22,0]])
         # T_[2][:3, 3] = T_[1][:3, 3] + T_[1][:3,:3] @ np.reshape(z,(3,))
-        # T_[2][:3,:3] = T_[1][:3,:3] @ Rot_z(-40)
+        # T_[2][:3,:3] = T_[1][:3,:3] @ Rot_z(-180)
 
         # T_.append(np.eye(4))
-        # z = np.array([[0,0.496,0]])
+        # z = np.array([[0,0.22375,0]])
         # T_[3][:3,3] = T_[2][:3, 3] + T_[2][:3,:3] @ np.reshape(z,(3,))
-        # T_[3][:3,:3] = T_[2][:3,:3] @ Rot_z(-40)
-
+        # T_[3][:3,:3] = T_[2][:3,:3]
         # T_.append(np.eye(4))
-        # z = np.array([[0,0.12,0]])
+        # z = np.array([[0,0.04,0]])
         # T_[4][:3,3] = T_[3][:3, 3] + T_[3][:3,:3] @ np.reshape(z,(3,))
-        # T_[4][:3,:3] = T_[3][:3,:3] @ Rot_x(-90)
+        # T_[4][:3,:3] = T_[3][:3,:3] @ Rot_y(-90)
 
         # T_.append(np.eye(4))
-        # z = np.array([[0,0,0.2096]])
+        # z = np.array([[0,0.048,0]])
         # T_[5][:3,3] = T_[4][:3, 3] + T_[4][:3,:3] @ np.reshape(z,(3,))
-        # T_[5][:3,:3] = T_[4][:3,:3]
+        # T_[5][:3,:3] = T_[4][:3,:3] @ Rot_x(-90) @ Rot_z(90)
         
         w,v = self.get_first_wv()
 
@@ -129,7 +130,7 @@ class Kinematic:
 
         self.R_lnk = []
         self.P_lnk = []
-        for i in range(4 + 1):
+        for i in range(self.DOF + 1):
             self.R_lnk.append(T_[i][:3,:3])
             self.P_lnk.append(T_[i][:3,3])
 
@@ -141,9 +142,9 @@ class Kinematic:
     def get_jnt_axis(self):
         w,v = self.get_first_wv()
 
-        joint_axis = np.zeros((4, 3))
+        joint_axis = np.zeros((self.DOF, 3))
 
-        for i in range(4):
+        for i in range(self.DOF):
             joint_axis[i,:] = self.R_lnk[i] @ np.reshape(w[0],(3,))
 
         return joint_axis
@@ -156,7 +157,7 @@ class Kinematic:
         end_effector_pos: 엔드 이펙터 위치 (3x1 벡터) -> P_EE
         joint_types: 관절 타입 리스트 (0=프리스매틱, 1=회전) -> m.jnt_type
         """
-        num_joints = 4
+        num_joints = self.DOF
         
         # 선형 및 각 자코비안 초기화 (6 x N 자코비안)
         J_p = np.zeros((3, num_joints))

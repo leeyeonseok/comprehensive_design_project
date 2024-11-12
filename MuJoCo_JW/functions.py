@@ -159,7 +159,7 @@ def Quat2Omega(quat, quatdot):
     Omega = np.array([trans[1], trans[2], trans[3]])
     return Omega
 
-def SVD_DLS_inverse(J, lambda_factor=0.01):
+def SVD_DLS_inverse(J, lambda_factor=0.1):
     U, S, Vt = np.linalg.svd(J, full_matrices=False)
     
     S_damped = np.diag([s / (s**2 + lambda_factor**2) for s in S])
