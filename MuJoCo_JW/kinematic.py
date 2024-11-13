@@ -54,7 +54,7 @@ class Kinematic:
                       np.array([0, 0, 0.765]).T,
                       np.array([0, 0, 0.765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.22, 0]).T,
                       np.array([0, 0, 0.765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.22, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.22375, 0]).T,
-                      np.array([0, 0, 0.765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.22, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.22375, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.4, 0]).T])
+                      np.array([0, 0, 0.765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.22, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.22375, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.04, 0]).T])
         
         v = -np.cross(w, q)
         return w,v
@@ -170,12 +170,12 @@ class Kinematic:
         T_.append(np.eye(4))
         z = np.array([[0,0.04,0]])
         T_[4][:3,3] = T_[3][:3, 3] + T_[3][:3,:3] @ np.reshape(z,(3,))
-        T_[4][:3,:3] = T_[3][:3,:3] @ Rot_y(-90)
+        T_[4][:3,:3] = T_[3][:3,:3] @ Rot_x(-90)
 
         T_.append(np.eye(4))
-        z = np.array([[0,0.048,0]])
+        z = np.array([[0,0,0.048]])
         T_[5][:3,3] = T_[4][:3, 3] + T_[4][:3,:3] @ np.reshape(z,(3,))
-        T_[5][:3,:3] = T_[4][:3,:3] @ Rot_x(-90) @ Rot_z(90)
+        T_[5][:3,:3] = T_[4][:3,:3]
         
         w,v = self.get_first_wv()
 

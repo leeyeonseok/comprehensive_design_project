@@ -34,12 +34,12 @@
                         <geom type="cylinder" pos="0 0.02 0" euler="-90 0 0" mass="0.01" size="0.012 0.018" rgba="0.3 0.6 0 1"/>
                         <geom type="cylinder" pos="0 0 0" euler="0 0 0" mass="0.082" size="0.008 0.014" rgba="1 0 0.5 1"/>
                         <!-- Link5 -->
-                        <body name="link5" pos="0 0.04 0" euler="0 -90 0">
+                        <body name="link5" pos="0 0.04 0" euler="-90 0 0">
                             <joint name="L5" pos="0 0 0" type="hinge" axis="0 0 1" limited="false" range="-160 160"/>
-                            <geom type="box" pos="0 0.02 0" euler="0 0 0" mass="0.02" size="0.02 0.012 0.012" rgba="0.5 0.6 0.3 1"/>
-                            <geom type="cylinder" pos="0 0 0" euler="0 0 0" mass="0.082" size="0.008 0.012" rgba="1 0 0.5 1"/>
+                            <geom type="box" pos="0 0 0.017" euler="0 0 0" mass="0.02" size="0.012 0.02 0.012" rgba="0.5 0.6 0.3 1"/>
+                            <geom type="cylinder" pos="0 0 0" euler="0 0 0" mass="0.082" size="0.013 0.005" rgba="1 0 0.5 1"/>
                             <!--  Fingers -->
-                            <body name="fingers" pos="0 0.048 0" euler="-90 0 90">
+                            <body name="fingers" pos="0 0 0.048" euler="0 0 0">
                                 <!-- <geom type="box" pos="0 0 -0.04" euler="0 0 0" size="0.02 0.0888 0.02" rgba="0.5 0.6 0.3 1"/>
                                 <geom type="box" pos="0 0 0.04" euler="0 0 0" size="0.02 0.0888 0.02" rgba="0.5 0.6 0.3 1"/> -->
                                 <geom type="sphere" pos="0 0 0" euler="0 0 0" mass="0.2" size="0.002" rgba="0.5 0.6 0.3 1"/>
