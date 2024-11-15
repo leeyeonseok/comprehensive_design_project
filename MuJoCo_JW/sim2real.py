@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 # import rospy
 # from std_msgs.msg import Float32MultiArray
 
-jnt = 4
-dxl_ids = [11, 12, 13, 14]
+jnt = 5
+dxl_ids = [11, 12, 13, 14, 15]
 dxl = Dynamixel(dxl_ids)
 joint_torq = np.zeros(jnt)
 
@@ -56,22 +56,22 @@ while t < traj_time[-1] + 2:
     if cnt == 0:
         linear_d[0] = Trajectory(0,traj_time[0])
         init_state = P_EE
-        final_state = [0.168, 0, 0.1525]
+        final_state = [0.375, 0, 0.2525]
         linear_d[0].get_coeff(init_state, final_state)
 
         linear_d[1] = Trajectory(traj_time[0], traj_time[1])
         init_state = linear_d[0].final_state
-        final_state = [-0.202, 0.202, 0.19]
+        final_state = [0.127, 0, 0.4175]
         linear_d[1].get_coeff(init_state, final_state)
 
         linear_d[2] = Trajectory(traj_time[1], traj_time[2])
         init_state = linear_d[1].final_state
-        final_state = [0.191, 0.191, 0.18]
+        final_state = [0.275, 0.275, 0.245]
         linear_d[2].get_coeff(init_state, final_state)
 
         linear_d[3] = Trajectory(traj_time[2], traj_time[3])
         init_state = linear_d[2].final_state
-        final_state = [-0.212, 0.212, 0.161]
+        final_state = [-0.287, 0.287, 0.2175]
         linear_d[3].get_coeff(init_state, final_state)
     # ========================================================================================================
         angular_d[0] = Trajectory(0,traj_time[0])
@@ -82,19 +82,19 @@ while t < traj_time[-1] + 2:
 
         angular_d[1] = Trajectory(traj_time[0],traj_time[1])
         init_state = angular_d[0].final_state
-        final_rot = final_rot @ Rot_x(-135) # local coordinate
+        final_rot = final_rot # local coordinate
         final_state = Rot2Quat(final_rot)
         angular_d[1].get_coeff_quat(init_state, final_state)    
 
         angular_d[2] = Trajectory(traj_time[1],traj_time[2])
         init_state = angular_d[1].final_state
-        final_rot = final_rot @ Rot_x(89) # local coordinate
+        final_rot = final_rot @ Rot_x(-45) # local coordinate
         final_state = Rot2Quat(final_rot)
         angular_d[2].get_coeff_quat(init_state, final_state)  
 
         angular_d[3] = Trajectory(traj_time[2],traj_time[3])
         init_state = angular_d[2].final_state
-        final_rot = final_rot @ Rot_x(-89) # local coordinate
+        final_rot = final_rot @ Rot_x(-90) # local coordinate
         final_state = Rot2Quat(final_rot)
         angular_d[3].get_coeff_quat(init_state, final_state)  
 
@@ -115,14 +115,14 @@ while t < traj_time[-1] + 2:
     
     quat_d /= (np.linalg.norm(quat_d) + 1e-8)
 
-    vel_CLIK = vel_d + 40 * (pos_d - P_EE)
-    quatdot_CLIK = quatdot_d + 40 * (quat_d - quat_e)
+    vel_CLIK = vel_d + 30 * (pos_d - P_EE)
+    quatdot_CLIK = quatdot_d + 30 * (quat_d - quat_e)
 
     omega = Quat2Omega(quat_d, quatdot_CLIK)
     total = np.hstack((vel_CLIK,omega))
     null = np.eye(jnt) - np.linalg.pinv(J_pr) @ J_pr
     
-    qvel_d = DLS_inverse(J_pr) @ np.reshape(total, (6,)) + null @ qvel
+    qvel_d = DLS_inverse(J_pr) @ np.reshape(total, (6,))# + null @ qvel
     qpos_d = qpos_d + qvel_d * timestep
 
     # joint_torq = 20 * (qpos_d - qpos) + 10 * (qvel_d - qvel)
@@ -150,10 +150,11 @@ while t < traj_time[-1] + 2:
     print("time : ",t, "\t", "pos_d : ", pos_d)
     print("time : ",t, "\t", "qpos   : ", qpos)
     print("time : ",t, "\t", "qpos_d : ", qpos_d)
+    print(dxl.init_state)
     print("===============================================================================================================================")
-    timestep = time.time() - start_time
+    timestep = 0.005 #
     t += timestep
-    print('time: ', timestep)
+    print('time: ', time.time() - start_time)
     
 
 dxl.close_port()

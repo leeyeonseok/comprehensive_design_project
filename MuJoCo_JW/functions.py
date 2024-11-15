@@ -133,6 +133,23 @@ def Quat2Rot(quat):
 
     return R
 
+def euler_to_quaternion(roll, pitch, yaw):
+    # Euler angles (roll, pitch, yaw) must be in radians
+    roll, pitch, yaw = map(lambda x: x / 180 * pi,[roll, pitch, yaw])
+    cr = np.cos(roll / 2)
+    sr = np.sin(roll / 2)
+    cp = np.cos(pitch / 2)
+    sp = np.sin(pitch / 2)
+    cy = np.cos(yaw / 2)
+    sy = np.sin(yaw / 2)
+
+    w = cr * cp * cy + sr * sp * sy
+    x = sr * cp * cy - cr * sp * sy
+    y = cr * sp * cy + sr * cp * sy
+    z = cr * cp * sy - sr * sp * cy
+
+    return np.array([w, x, y, z])
+
 def conjugation(q):
     return np.array([q[0], -q[1], -q[2], -q[3]])
 

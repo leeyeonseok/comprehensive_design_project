@@ -1,6 +1,6 @@
 <mujoco model="AT arm">
     <compiler inertiafromgeom="true" angle="degree"/>
-    <option timestep="0.005" gravity="0 0 0" cone="elliptic" jacobian="auto" solver="Newton" impratio="1.0"/>
+    <option timestep="0.005" gravity="0 0 -9.81" cone="elliptic" jacobian="auto" solver="Newton" impratio="1.0"/>
     <!--  collision="predefined"  -->
     <option>
         <flag gravity="enable" override="enable"/>

@@ -1,9 +1,17 @@
-import mujoco_py
 import os
-from kinematic import *
-from trajectory import Trajectory
+import sys
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.join(current_dir, "..")
+sys.path.append(project_dir)
+project_dir = os.path.join(project_dir, "MuJoCo_JW")
+sys.path.append(project_dir)
+
+import mujoco_py
+from MuJoCo_JW.kinematic import *
+from MuJoCo_JW.trajectory import Trajectory
+from ebimu import EBIMU
 import matplotlib.pyplot as plt
-from dxl import Dynamixel
 import time
 
 xml_path = './MuJoCo_JW/model/scene.xml'
@@ -17,6 +25,8 @@ viewer = mujoco_py.MjViewer(sim)
 #========================= Dynamixel load ==============================
 # ids = [11, 12, 13, 14, 15]
 # dxl = Dynamixel(ids)
+#============================ IMU load =================================
+imu = EBIMU()
 #========================= Define Parameters ===========================
 traj_time = [4, 8, 12, 16]
 cnt = 0
@@ -32,7 +42,7 @@ quat_e_pre = [1, 0 ,0 ,0]
 T, pd, pvd, qvd, qpd, pe, quatd, quatv, tq0, tq1, tq2, tq3, tq4 = [], [], [], [], [], [], [], [], [], [], [], [], []
 
 
-while d.time < traj_time[-1] + 2:
+while 1:#d.time < traj_time[-1] + 2:
     # ========================================Kinematics: START===============================================
     K = Kinematic(sim)
     start = time.time()
@@ -51,6 +61,8 @@ while d.time < traj_time[-1] + 2:
     P_EE_mj = d.body_xpos[-1]
     quat_mj = d.body_xquat[-1]
     R_EE_mj = np.reshape(d.body_xmat[-1], (3,3))
+
+    imu_quat = imu.get_data()
     # ==========================================Kinematics: END===============================================
     
     # ========================================Trajectory: START===============================================
@@ -111,15 +123,14 @@ while d.time < traj_time[-1] + 2:
     elif d.time <= traj_time[2]:
         pos_d, vel_d, acc_d = linear_d[2].calculate_pva(d.time)
         quat_d, quatdot_d, quatddot_d = angular_d[2].calculate_pva_quat(d.time)
-    elif d.time <= traj_time[3]:
+    else:
         pos_d, vel_d, acc_d = linear_d[3].calculate_pva(d.time)
         quat_d, quatdot_d, quatddot_d = angular_d[3].calculate_pva_quat(d.time)
     
     quat_d /= (np.linalg.norm(quat_d) + 10 ** (-8))
-    
-    # if np.dot(quat_d, quat_mj) < 1:
-    #      quat_d = -quat_d
-    
+
+    if d.time > traj_time[-1] + 2:
+        quat_d = mul_quat(imu_quat, quat_d)
     # ==========================================Trajectory: END===============================================
     vel_CLIK = vel_d + 50 * (pos_d - P_EE)
     quatdot_CLIK = quatdot_d + 50 * (quat_d - quat_e)
@@ -133,7 +144,7 @@ while d.time < traj_time[-1] + 2:
     total = np.hstack((vel_CLIK,omega))
     null = np.eye(5) - np.linalg.pinv(J_pr) @ J_pr
     
-    qvel_d = SVD_DLS_inverse(J_pr) @ np.reshape(total, (6,)) + null @ d.qvel
+    qvel_d = DLS_inverse(J_r) @ np.reshape(omega, (3,))# + null @ d.qvel
 
     # dxl.control_pos(d.qpos)
     qpos_d = qpos_d + qvel_d * m.opt.timestep
@@ -162,9 +173,8 @@ while d.time < traj_time[-1] + 2:
     print(d.time, "\t", "qpos_d : ", qpos_d)
     print(d.time, "\t", "pos_d - P_EE : ", pos_d - P_EE)
     print(d.time, "\t", "quat_e : ", quat_mj, "\t", quat_e) 
-    print(d.time, "\t", "Rot_EE : ", R_EE)
-    print(d.time, "\t", "Rot_mj : ", R_EE_mj)
     print(d.time, "\t", "angle diff : ", angular_d[1].angle_diff, angular_d[2].angle_diff, angular_d[3].angle_diff)
+    print(d.time, "\t", "imu : ", imu_quat)
     print(start-time.time())
     print("===============================================================================================================================")
 
@@ -173,50 +183,5 @@ while d.time < traj_time[-1] + 2:
 
     sim.step()
     viewer.render()
-
-# for i in range(4):
-#     dxl[i].close_port()
-
-plt.subplot(321)
-plt.plot(T,pe)
-plt.title("P_EE")
-plt.grid()
-
-plt.subplot(322)
-plt.plot(T,qvd)
-plt.title("qvel_d")
-plt.grid()
-
-plt.subplot(323)
-plt.plot(T,qpd)
-plt.title("qpos_d")
-plt.grid()
-
-plt.subplot(324)
-plt.plot(T,pvd)
-plt.title("vel_d")
-plt.grid()
-
-plt.subplot(325)
-plt.plot(T,quatd)
-plt.title("quat_d")
-plt.grid()
-
-plt.subplot(326)
-plt.plot(T,quatv)
-plt.title("quatdot_d")
-plt.grid()
-
-# print("max torque : ", np.max([tq0,tq1,tq2,tq3,tq4]))
-# plt.plot(T,tq0, label="Joint1")
-# plt.plot(T,tq1, label="Joint2")
-# plt.plot(T,tq2, label="Joint3")
-# plt.plot(T,tq3, label="Joint4")
-# plt.plot(T,tq4, label="Joint5")
-# plt.title("joint torq")
-# plt.legend(loc='best')
-# plt.grid()
-
-plt.show()
 
 
