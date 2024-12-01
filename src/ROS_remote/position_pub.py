@@ -4,7 +4,6 @@ import sys
 import rospy
 from std_msgs.msg import Float64MultiArray
 
-# 현재 파일의 경로를 기준으로 MuJoCo_JW 경로 추가
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../'))
 
 from MuJoCo_JW.dxl import RemoteDynamixel
@@ -22,7 +21,7 @@ class RemotePub:
 
 
 def main():
-    rospy.init_node('remote_pub_node')  # ROS 노드 초기화
+    rospy.init_node('remote_pub_node')
     remote_pub = RemotePub()
     rate = rospy.Rate(200)
 

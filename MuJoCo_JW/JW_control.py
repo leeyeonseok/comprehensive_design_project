@@ -1,13 +1,18 @@
+#!/usr/bin/env python
+import rospy
 import numpy as np
+from std_msgs.msg import Float64MultiArray
 from kinematic import *
 from trajectory import Trajectory
 from dxl import MainDynamixel, RemoteDynamixel
 
 class JWControl:
     def __init__(self, sim, model, data):
+        self.position_sub = rospy.Subscriber('positions', Float64MultiArray, self.position_callback)
         self.m = model
         self.sim = sim
         self.d = data
+        self.qpos_d = []
 
         self.initialize_params()
 
@@ -15,7 +20,10 @@ class JWControl:
         # self.main_dxl = MainDynamixel(main_dxl_ids)
         # remote_dxl_ids = [5,6,7,8,9]
         # self.remote_dxl = RemoteDynamixel(remote_dxl_ids)
-    
+
+    def postion_callback(self, msg):
+        self.qpos_d = msg.data
+
     def initialize_params(self):
         self.traj_time = [0, 4, 8, 12, 16]
         self.cnt_init = 0
@@ -130,8 +138,11 @@ class JWControl:
         qvel_d = SVD_DLS_inverse(J_pr) @ np.reshape(total, (6,)) + null @ self.d.qvel
 
         # dxl.control_pos(d.qpos)
-        self.qpos_d = self.qpos_d + qvel_d * self.m.opt.timestep
+        # self.qpos_d = self.qpos_d + qvel_d * self.m.opt.timestep
         
+        # test code
+        # self.qpos_d = 
+
         # joint_torq = 2000 * (qpos_d - d.qpos) + 1300 * (qvel_d - d.qvel)
         joint_torq = 50 * (self.qpos_d - self.d.qpos) + 30 * (qvel_d - self.d.qvel)  # 200Hz  50, 50
         # joint_torq = 10 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel)  # 100Hz  100, 100
