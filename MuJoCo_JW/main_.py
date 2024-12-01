@@ -10,7 +10,7 @@ d = sim.data
 viewer = mujoco_py.MjViewer(sim)
 
 robot = JWControl(sim, m, d)
-dxl = RemoteDynamixel([5,6,7,8,9])
+
 while True: # 반복 제어랑 원격제어랑 if로 아예 공간 나눠야함
     joint_torq = robot.move_fixed_traj()
     if d.time >= 5:

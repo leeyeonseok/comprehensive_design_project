@@ -9,7 +9,7 @@ class MainDynamixel:
     def __init__(self, ids):
         # 통신 설정
         self.DEVICENAME = '/dev/ttyUSB0'  
-        self.BAUDRATE = 4000000
+        self.BAUDRATE = 3000000
         self.PROTOCOL_VERSION = 2.0       # Dynamixel 프로토콜 버전
 
         # 다이나믹셀 설정
@@ -27,6 +27,7 @@ class MainDynamixel:
         self.TORQUE_DISABLE = 0            # 토크 비활성화
         self.DXL_MINIMUM_POSITION_VALUE = 0     # 최소 위치 (예시)
         self.DXL_MAXIMUM_POSITION_VALUE = 4095  # 최대 위치 (예시)
+        self.PROFILE_VELOCITY = 112
         
         # 포트 핸들러와 패킷 핸들러 초기화
         self.portHandler = PortHandler(self.DEVICENAME)
@@ -39,6 +40,7 @@ class MainDynamixel:
         self.connect_motor()
         self.change_mode(self.CURRENT_CONTROL)
         self.enable_torque()
+        self.limit_velocity(60)
         self.init_state = self.get_init_state()
     
     def connect_motor(self):
@@ -76,15 +78,24 @@ class MainDynamixel:
 
             print("다이나믹셀 토크 비활성화 완료.")
 
-    def change_mode(self, num):
+    def change_mode(self, mode):
         # Operating Mode 변경
         for dxl_id in self.DXL_IDs:
-            dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.OPERATING_MODE, num)
+            dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.OPERATING_MODE, mode)
             if dxl_comm_result != COMM_SUCCESS:
                 print(f"Operating Mode 변경 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
                 quit()
 
-        print(f"Operating Mode가 {num}로 변경되었습니다.")
+        print(f"Operating Mode가 {mode}로 변경되었습니다.")
+
+    def limit_velocity(self, num):
+        for dxl_id in self.DXL_IDs:
+            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, dxl_id, self.PROFILE_VELOCITY, num)
+            if dxl_comm_result != COMM_SUCCESS:
+                print(f"Profile velocity 변경 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
+                quit()
+        
+        print(f"Profile velocity가 {num}로 변경되었습니다.")
 
     def get_init_state(self):
         self.control_pos([0,0,0,0,0,0])
@@ -168,6 +179,7 @@ class RemoteDynamixel:
         self.TORQUE_DISABLE = 0            # 토크 비활성화
         self.DXL_MINIMUM_POSITION_VALUE = 0     # 최소 위치 (예시)
         self.DXL_MAXIMUM_POSITION_VALUE = 4095  # 최대 위치 (예시)
+        self.PROFILE_VELOCITY = 112
         
         # 포트 핸들러와 패킷 핸들러 초기화
         self.portHandler = PortHandler(self.DEVICENAME)
@@ -178,12 +190,16 @@ class RemoteDynamixel:
         
         # 다이나믹셀 연결 및 위치 초기화
         self.connect_motor()
+
         self.change_mode(self.POSITION_CONTROL)
         self.enable_torque()
+        self.limit_velocity(60)
         self.init_state = self.get_init_state()
         self.disable_torque()
+
         self.change_mode(self.CURRENT_CONTROL)
         self.enable_torque()
+        self.limit_velocity(60)
 
     def connect_motor(self):
         # 포트 열기
@@ -220,15 +236,24 @@ class RemoteDynamixel:
 
             print("다이나믹셀 토크 비활성화 완료.")
 
-    def change_mode(self, num):
+    def change_mode(self, mode):
         # Operating Mode 변경
         for dxl_id in self.DXL_IDs:
-            dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.OPERATING_MODE, num)
+            dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.OPERATING_MODE, mode)
             if dxl_comm_result != COMM_SUCCESS:
                 print(f"Operating Mode 변경 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
                 quit()
 
-        print(f"Operating Mode가 {num}로 변경되었습니다.")
+        print(f"Operating Mode가 {mode}로 변경되었습니다.")
+
+    def limit_velocity(self, num):
+        for dxl_id in self.DXL_IDs:
+            dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, dxl_id, self.PROFILE_VELOCITY, num)
+            if dxl_comm_result != COMM_SUCCESS:
+                print(f"Profile velocity 변경 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
+                quit()
+        
+        print(f"Profile velocity가 {num}로 변경되었습니다.")
 
     def get_init_state(self):
         self.control_pos([0,0,0,0,0,0])
