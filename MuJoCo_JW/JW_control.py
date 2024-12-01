@@ -9,6 +9,14 @@ class JWControl:
         self.sim = sim
         self.d = data
 
+        self.initialize_params()
+
+        # main_dxl_ids = []
+        # self.main_dxl = MainDynamixel(main_dxl_ids)
+        # remote_dxl_ids = [5,6,7,8,9]
+        # self.remote_dxl = RemoteDynamixel(remote_dxl_ids)
+    
+    def initialize_params(self):
         self.traj_time = [0, 4, 8, 12, 16]
         self.cnt_init = 0
         self.cnt_remote = 0
@@ -31,9 +39,6 @@ class JWControl:
         
         self.K = Kinematic(self.sim)
 
-        # main_dxl_ids = []
-        # self.main_dxl = MainDynamixel(main_dxl_ids)
-    
     def kinematics(self, qpos):
         P_EE,R_EE,P_lnk,R_lnk = self.K.forward_kinematics(qpos)
         jnt_axes = self.K.get_jnt_axis()
@@ -57,7 +62,6 @@ class JWControl:
         # ==========================================Kinematics: END===============================================
         pos_d, vel_d = P_EE, np.zeros((3,)) 
         quat_d, quatdot_d = quat_e, np.zeros((4,))
-        quatdot_d[0] = 1
     
         # ========================================Trajectory: START===============================================
         init_state = P_EE
@@ -132,10 +136,14 @@ class JWControl:
         joint_torq = 50 * (self.qpos_d - self.d.qpos) + 30 * (qvel_d - self.d.qvel)  # 200Hz  50, 50
         # joint_torq = 10 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel)  # 100Hz  100, 100
         # joint_torq = 3 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel) # 50Hz  3, 20 40 50 끝까지 흔들리긴함
+        
+        # self.remote_dxl.control_pos(self.d.qpos)
 
         return joint_torq
 
     def remote_control(self, qpos_ros):
+        qpos_d, qvel_d = self.d.qpos, np.zeors((5,))
+
         if self.cnt_remote == 0:
             init_time = self.d.time
             final_time = init_time + 3
@@ -156,10 +164,13 @@ class JWControl:
         init_pos = [0.1765, 0, 0.2265]
 
         P_EE,R_EE,P_lnk,R_lnk,J_pr,quat_e = self.kinematics(self.d.qpos)
-        
+
+        pos_d, vel_d = P_EE, np.zeros((3,)) 
+        quat_d, quatdot_d = quat_e, np.zeros((4,))
+
         if self.cnt_init == 0:
             init_time = self.d.time
-            final_time = init_time + 15
+            final_time = init_time + 3
             self.init_linear_d = Trajectory(init_time, final_time)
             self.init_linear_d.get_coeff(P_EE, init_pos)
 
@@ -171,6 +182,7 @@ class JWControl:
             self.qpos_d = 0
             self.cnt_init += 1
         
+
         pos_d, vel_d, acc_d = self.init_linear_d.calculate_pva(self.d.time)
         quat_d, quatdot_d, quatddot_d = self.init_angular_d.calculate_pva_quat(self.d.time)
 

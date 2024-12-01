@@ -4,6 +4,7 @@ from math import pi
 from dynamixel_sdk import *  
 import numpy as np
 
+# ========================================================= MAIN MOTOR ==========================================================================
 class MainDynamixel:
     def __init__(self, ids):
         # 통신 설정
@@ -14,7 +15,7 @@ class MainDynamixel:
         # 다이나믹셀 설정
         self.OPERATING_MODE = 11           # Pos, vel, torq control 
         self.CURRENT_CONTROL = 0
-        self.POSITION_CONTROL = 3
+        self.POSITION_CONTROL = 4
         self.CURRENT_BASED_POSITION_CONTROL = 5
         self.DXL_IDs = ids                 # 제어할 다이나믹셀의 ID
         self.ADDR_TORQUE_ENABLE = 64       # Torque Enable 주소
@@ -36,9 +37,10 @@ class MainDynamixel:
         
         # 다이나믹셀 연결 및 위치 초기화
         self.connect_motor()
+        self.change_mode(self.CURRENT_CONTROL)
+        self.enable_torque()
         self.init_state = self.get_init_state()
-        # self.change_mode(self.CURRENT_CONTROL)
-
+    
     def connect_motor(self):
         # 포트 열기
         if self.portHandler.openPort():
@@ -53,7 +55,8 @@ class MainDynamixel:
         else:
             print("통신 속도 설정 실패.")
             quit()
-
+    
+    def enable_torque(self):
         # 다이나믹셀의 토크 활성화
         for dxl_id in self.DXL_IDs:
             dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.ADDR_TORQUE_ENABLE, self.TORQUE_ENABLE)
@@ -62,17 +65,29 @@ class MainDynamixel:
                 quit()
 
             print("다이나믹셀 토크 활성화 완료.")
+    
+    def disable_torque(self):
+        # 다이나믹셀의 토크 활성화
+        for dxl_id in self.DXL_IDs:
+            dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.ADDR_TORQUE_ENABLE, self.TORQUE_DISABLE)
+            if dxl_comm_result != COMM_SUCCESS:
+                print(f"토크 비활성화 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
+                quit()
 
-    # def change_mode(self, num):
-    #     # Operating Mode 변경
-    #     dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, self.DXL_ID, self.OPERATING_MODE, num)
-    #     if dxl_comm_result != COMM_SUCCESS:
-    #         print(f"Operating Mode 변경 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
-    #         quit()
+            print("다이나믹셀 토크 비활성화 완료.")
 
-    #     print(f"Operating Mode가 {num}로 변경되었습니다.")
+    def change_mode(self, num):
+        # Operating Mode 변경
+        for dxl_id in self.DXL_IDs:
+            dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.OPERATING_MODE, num)
+            if dxl_comm_result != COMM_SUCCESS:
+                print(f"Operating Mode 변경 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
+                quit()
+
+        print(f"Operating Mode가 {num}로 변경되었습니다.")
 
     def get_init_state(self):
+        self.control_pos([0,0,0,0,0,0])
         init_states = {}
         for dxl_id in self.DXL_IDs:
             init_state, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_POSITION)
@@ -80,7 +95,6 @@ class MainDynamixel:
                 init_state = init_state - 4294965248 - 2048
             init_states[dxl_id] = init_state / 2048 * pi
 
-            self.control_pos([0,0,0,0,0,0])
         return init_states
 
     
@@ -99,7 +113,6 @@ class MainDynamixel:
     def control_pos(self, goal_position):
         self.groupSyncWritePosition.clearParam()
         for dxl_id, goal in zip(self.DXL_IDs, goal_position):
-            init_state = self.init_state[dxl_id]
             goal = goal / pi * 2048 #+ init_state / pi * 2048
             goal_pos = int(goal)
             param_goal_pos = [DXL_LOBYTE(DXL_LOWORD(goal_pos)),
@@ -132,6 +145,7 @@ class MainDynamixel:
     def close_port(self):
         self.portHandler.closePort()
 
+# ========================================================= REMOTE MOTOR ==========================================================================
 class RemoteDynamixel:
     def __init__(self, ids):
         # 통신 설정
@@ -142,7 +156,7 @@ class RemoteDynamixel:
         # 다이나믹셀 설정
         self.OPERATING_MODE = 11           # Pos, vel, torq control 
         self.CURRENT_CONTROL = 0
-        self.POSITION_CONTROL = 3
+        self.POSITION_CONTROL = 4
         self.CURRENT_BASED_POSITION_CONTROL = 5
         self.DXL_IDs = ids                 # 제어할 다이나믹셀의 ID
         self.ADDR_TORQUE_ENABLE = 64       # Torque Enable 주소
@@ -164,8 +178,12 @@ class RemoteDynamixel:
         
         # 다이나믹셀 연결 및 위치 초기화
         self.connect_motor()
+        self.change_mode(self.POSITION_CONTROL)
+        self.enable_torque()
         self.init_state = self.get_init_state()
-        # self.change_mode(self.CURRENT_CONTROL)
+        self.disable_torque()
+        self.change_mode(self.CURRENT_CONTROL)
+        self.enable_torque()
 
     def connect_motor(self):
         # 포트 열기
@@ -181,7 +199,8 @@ class RemoteDynamixel:
         else:
             print("통신 속도 설정 실패.")
             quit()
-
+    
+    def enable_torque(self):
         # 다이나믹셀의 토크 활성화
         for dxl_id in self.DXL_IDs:
             dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.ADDR_TORQUE_ENABLE, self.TORQUE_ENABLE)
@@ -190,17 +209,29 @@ class RemoteDynamixel:
                 quit()
 
             print("다이나믹셀 토크 활성화 완료.")
+    
+    def disable_torque(self):
+        # 다이나믹셀의 토크 활성화
+        for dxl_id in self.DXL_IDs:
+            dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.ADDR_TORQUE_ENABLE, self.TORQUE_DISABLE)
+            if dxl_comm_result != COMM_SUCCESS:
+                print(f"토크 비활성화 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
+                quit()
 
-    # def change_mode(self, num):
-    #     # Operating Mode 변경
-    #     dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, self.DXL_ID, self.OPERATING_MODE, num)
-    #     if dxl_comm_result != COMM_SUCCESS:
-    #         print(f"Operating Mode 변경 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
-    #         quit()
+            print("다이나믹셀 토크 비활성화 완료.")
 
-    #     print(f"Operating Mode가 {num}로 변경되었습니다.")
+    def change_mode(self, num):
+        # Operating Mode 변경
+        for dxl_id in self.DXL_IDs:
+            dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, dxl_id, self.OPERATING_MODE, num)
+            if dxl_comm_result != COMM_SUCCESS:
+                print(f"Operating Mode 변경 실패: {self.packetHandler.getTxRxResult(dxl_comm_result)}")
+                quit()
+
+        print(f"Operating Mode가 {num}로 변경되었습니다.")
 
     def get_init_state(self):
+        self.control_pos([0,0,0,0,0,0])
         init_states = {}
         for dxl_id in self.DXL_IDs:
             init_state, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_POSITION)
@@ -225,7 +256,6 @@ class RemoteDynamixel:
     def control_pos(self, goal_position):
         self.groupSyncWritePosition.clearParam()
         for dxl_id, goal in zip(self.DXL_IDs, goal_position):
-            init_state = self.init_state[dxl_id]
             goal = goal / pi * 2048 #+ init_state / pi * 2048
             goal_pos = int(goal)
             param_goal_pos = [DXL_LOBYTE(DXL_LOWORD(goal_pos)),
