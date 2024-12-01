@@ -80,29 +80,8 @@ class Kinematic:
 
         return np.vstack((np.hstack((R, np.reshape(p, (3, 1)))), [0, 0, 0, 1]))
         
-    
-    def fkine(self, i, xi, theta):
-        T = np.eye(4)
-        omega = xi[:3]
-        v = xi[3:]
-        
-        omega_hat = skew(omega)
-
-        expm_w = expm(omega_hat*theta)
-        g = (np.eye(3)*theta + (1-np.cos(theta))*omega
-        + (theta-np.sin(theta)) * np.matmul(omega,omega))
-        gv = np.matmul(g,v)
-        expm_s = np.concatenate((expm_w,gv), axis=1)
-        expm_s = np.concatenate((expm_s,[[0,0,0,1]]), axis=0)
-        T = np.matmul(T,expm_s)
-
-        return T
 
     def forward_kinematics(self, q):
-        """
-        q: 관절 각도 배열
-        """
-        
         #=================4DOF=========================
         # 초기 엔드 이펙터 좌표 (기준 좌표계에서의 위치)
         # T_ = []

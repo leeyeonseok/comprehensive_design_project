@@ -3,7 +3,7 @@ import os
 from kinematic import *
 from trajectory import Trajectory
 import matplotlib.pyplot as plt
-from dxl import Dynamixel
+from dxl import MainDynamixel
 import time
 
 xml_path = './MuJoCo_JW/model/scene.xml'
@@ -30,14 +30,13 @@ qpos_d = 0
 quat_e_pre = [1, 0 ,0 ,0]
 #=========================== Plot ==================================
 T, pd, pvd, qvd, qpd, pe, quatd, quatv, tq0, tq1, tq2, tq3, tq4 = [], [], [], [], [], [], [], [], [], [], [], [], []
-
-
+K = Kinematic(sim)
 while d.time < traj_time[-1] + 2:
     # ========================================Kinematics: START===============================================
-    K = Kinematic(sim)
     start = time.time()
     T.append(d.time)
 
+    
     P_EE,R_EE,P_lnk,R_lnk = K.forward_kinematics(d.qpos)
     jnt_axes = K.get_jnt_axis()
     J_p, J_r = K.get_jacobian(P_lnk, jnt_axes, P_EE)

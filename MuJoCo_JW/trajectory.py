@@ -86,6 +86,38 @@ class Trajectory:
         acc = pva[2,:]
         
         return pos, vel, acc
+    
+    def get_coeff_qpos(self, init_state, final_state):
+        if self.excuted_once == False:
+            self.final_state = final_state
+            mat = np.array([[    self.init_time**5,     self.init_time**4,    self.init_time**3,    self.init_time**2,  self.init_time**1, 1],
+                            [  5*self.init_time**4,   4*self.init_time**3,  3*self.init_time**2,  2*self.init_time**1,                  1, 0],
+                            [ 20*self.init_time**3,  12*self.init_time**2,  6*self.init_time**1,                    2,                  0, 0],
+                            [   self.final_time**5,    self.final_time**4,   self.final_time**3,   self.final_time**2, self.final_time**1, 1],
+                            [ 5*self.final_time**4,  4*self.final_time**3, 3*self.final_time**2, 2*self.final_time**1,                  1, 0],
+                            [20*self.final_time**3, 12*self.final_time**2, 6*self.final_time**1,                    2,                  0, 0]])
+            
+            target = np.array([[      init_state[0],       init_state[1],       init_state[2],       init_state[0],       init_state[1]],
+                               [                  0,                   0,                   0,                   0,                   0],
+                               [                  0,                   0,                   0,                   0,                   0],
+                               [self.final_state[0], self.final_state[1], self.final_state[2], self.final_state[0], self.final_state[1]],
+                               [                  0,                   0,                   0,                   0,                   0],
+                               [                  0,                   0,                   0,                   0,                   0]])
+            
+            self.coeff_qpos = np.linalg.inv(mat) @ target    # 6x5 matrix
+            self.excuted_once = True
+        
+    def calculate_pva_qpos(self, current_time):   # calculate pose, velocity, acceleration
+        if current_time <= self.final_time:
+            pva = self.time_mat(current_time) @ self.coeff_qpos    # 3x4 matrix 
+        else:
+            pva = self.time_mat(self.final_time) @ self.coeff_qpos
+
+        pos = pva[0,:]
+        vel = pva[1,:]
+        acc = pva[2,:]
+        
+        return pos, vel, acc
 
 
 '''     발표용
