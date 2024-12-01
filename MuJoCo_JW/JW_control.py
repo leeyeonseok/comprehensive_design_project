@@ -8,7 +8,8 @@ from dxl import MainDynamixel, RemoteDynamixel
 
 class JWControl:
     def __init__(self, sim, model, data):
-        self.position_sub = rospy.Subscriber('positions', Float64MultiArray, self.position_callback)
+        # rospy.init_node('remote_sub_node2')
+        # self.position_sub = rospy.Subscriber('positions', Float64MultiArray, self.position_callback)
         self.m = model
         self.sim = sim
         self.d = data
@@ -21,8 +22,8 @@ class JWControl:
         # remote_dxl_ids = [5,6,7,8,9]
         # self.remote_dxl = RemoteDynamixel(remote_dxl_ids)
 
-    def postion_callback(self, msg):
-        self.qpos_d = msg.data
+    # def position_callback(self, msg):
+    #     self.qpos_d = msg.data
 
     def initialize_params(self):
         self.traj_time = [0, 4, 8, 12, 16]
@@ -49,6 +50,7 @@ class JWControl:
 
     def kinematics(self, qpos):
         P_EE,R_EE,P_lnk,R_lnk = self.K.forward_kinematics(qpos)
+        # print(qpos)
         jnt_axes = self.K.get_jnt_axis()
         J_p, J_r = self.K.get_jacobian(P_lnk, jnt_axes, P_EE)
         J_pr = np.vstack((J_p, J_r))
@@ -144,7 +146,7 @@ class JWControl:
         # self.qpos_d = 
 
         # joint_torq = 2000 * (qpos_d - d.qpos) + 1300 * (qvel_d - d.qvel)
-        joint_torq = 50 * (self.qpos_d - self.d.qpos) + 30 * (qvel_d - self.d.qvel)  # 200Hz  50, 50
+        joint_torq = 50 * (self.qpos_d - self.d.qpos)# + 30 * (qvel_d - self.d.qvel)  # 200Hz  50, 50
         # joint_torq = 10 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel)  # 100Hz  100, 100
         # joint_torq = 3 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel) # 50Hz  3, 20 40 50 끝까지 흔들리긴함
         

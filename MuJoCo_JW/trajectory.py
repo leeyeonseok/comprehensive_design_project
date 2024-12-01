@@ -11,8 +11,8 @@ class Trajectory:
 
     def time_mat(self, current_time):
         tmat = np.array([[   current_time**5,    current_time**4,   current_time**3,   current_time**2, current_time**1, 1],
-                         [ 5*current_time**4,  4*current_time**3, 3*current_time**2, 2*current_time**1,              1, 0],
-                         [20*current_time**3, 12*current_time**2, 6*current_time**1,                2,              0, 0]])
+                         [ 5*current_time**4,  4*current_time**3, 3*current_time**2, 2*current_time**1,               1, 0],
+                         [20*current_time**3, 12*current_time**2, 6*current_time**1,                 2,               0, 0]])
         
         return tmat
     

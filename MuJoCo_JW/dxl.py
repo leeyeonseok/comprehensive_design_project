@@ -38,9 +38,9 @@ class MainDynamixel:
         
         # 다이나믹셀 연결 및 위치 초기화
         self.connect_motor()
-        self.change_mode(self.CURRENT_CONTROL)
+        self.change_mode(self.POSITION_CONTROL)
         self.enable_torque()
-        self.limit_velocity(60)
+        self.limit_velocity(10)
         self.init_state = self.get_init_state()
     
     def connect_motor(self):
