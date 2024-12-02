@@ -145,17 +145,6 @@ class MainDynamixel:
             positions[num] = dxl_present_position / 2048 * pi - self.init_state[dxl_id] # 토크 제어시 self.init_state 제거
         
         return positions
-        self.groupSyncWritePosition.clearParam()
-        for dxl_id, goal in zip(self.DXL_IDs, goal_position):
-            goal = goal / pi * 2048 #+ init_state / pi * 2048
-            goal_pos = int(goal)
-            param_goal_pos = [DXL_LOBYTE(DXL_LOWORD(goal_pos)),
-                              DXL_HIBYTE(DXL_LOWORD(goal_pos)),
-                              DXL_LOBYTE(DXL_HIWORD(goal_pos)),
-                              DXL_HIBYTE(DXL_HIWORD(goal_pos))]
-            self.groupSyncWritePosition.addParam(dxl_id, param_goal_pos)
-        
-        self.groupSyncWritePosition.txPacket()
     
     def get_qvel(self):
         velocities = np.zeros(len(self.DXL_IDs))
