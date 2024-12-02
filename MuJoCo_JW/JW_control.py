@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-import rospy
 import numpy as np
-from std_msgs.msg import Float64MultiArray
 from kinematic import *
 from trajectory import Trajectory
 from dxl import MainDynamixel, RemoteDynamixel
@@ -62,7 +59,7 @@ class JWControl:
 
         return P_EE,R_EE,P_lnk,R_lnk,J_pr,quat_e
 
-    def move_fixed_traj(self):
+    def move_fixed_traj(self, remote_qpos, remote_qvel):
         # ========================================Kinematics: START===============================================
         P_EE,R_EE,P_lnk,R_lnk,J_pr,quat_e = self.kinematics(self.d.qpos)
 
@@ -141,15 +138,14 @@ class JWControl:
 
         # dxl.control_pos(d.qpos)
         # self.qpos_d = self.qpos_d + qvel_d * self.m.opt.timestep
-        
-        # test code
-        # self.qpos_d = 
 
         # joint_torq = 2000 * (qpos_d - d.qpos) + 1300 * (qvel_d - d.qvel)
-        joint_torq = 50 * (self.qpos_d - self.d.qpos)# + 30 * (qvel_d - self.d.qvel)  # 200Hz  50, 50
+        # joint_torq = 50 * (self.qpos_d - self.d.qpos) + 30 * (qvel_d - self.d.qvel)  # 200Hz  50, 50
         # joint_torq = 10 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel)  # 100Hz  100, 100
         # joint_torq = 3 * (qpos_d - d.qpos) + 20 * (qvel_d - d.qvel) # 50Hz  3, 20 40 50 끝까지 흔들리긴함
-        
+
+        # joint_torq = 50 * (float_list - self.d.qpos)
+        joint_torq = 50 * (remote_qpos - self.d.qpos) + 30 * (remote_qvel - self.d.qvel)
         # self.remote_dxl.control_pos(self.d.qpos)
 
         return joint_torq
