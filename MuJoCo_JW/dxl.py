@@ -35,12 +35,14 @@ class MainDynamixel:
 
         self.groupSyncWriteTorque = GroupSyncWrite(self.portHandler, self.packetHandler, self.ADDR_GOAL_CURRENT, 2)
         self.groupSyncWritePosition = GroupSyncWrite(self.portHandler, self.packetHandler, self.ADDR_GOAL_POSITION, 4)
+        self.groupSyncReadPosition = GroupSyncRead(self.portHandler,  self.packetHandler, self.ADDR_PRESENT_POSITION, 4)
+        self.groupSyncReadVelocity = GroupSyncRead(self.portHandler,  self.packetHandler, self.ADDR_PRESENT_VELOCITY, 4)
         
         # 다이나믹셀 연결 및 위치 초기화
         self.connect_motor()
         self.change_mode(self.POSITION_CONTROL)
         self.enable_torque()
-        self.limit_velocity(10)
+        self.limit_velocity(20)
         self.init_state = self.get_init_state()
     
     def connect_motor(self):
@@ -135,14 +137,23 @@ class MainDynamixel:
         self.groupSyncWritePosition.txPacket()
     
     def get_qpos(self):
-        positions = np.zeros(len(self.DXL_IDs))
-        for num, dxl_id in enumerate(self.DXL_IDs):
-            dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_POSITION)
+        self.groupSyncReadPosition.clearParam()
+        
+        for dxl_id in self.DXL_IDs:
+            dxl_addparam_result = self.groupSyncReadPosition.addParam(dxl_id)
+
+        dxl_comm_result = self.groupSyncReadPosition.txRxPacket()
+
+        positions = []
+        for dxl_id in self.DXL_IDs:
+            dxl_present_position = self.groupSyncReadPosition.getData(dxl_id, self.ADDR_PRESENT_POSITION, 4)
             if dxl_present_position > 4000000:
                 dxl_present_position = dxl_present_position - 4294965248 - 2048
-            positions[num] = dxl_present_position / 2048 * pi - self.init_state[dxl_id] # 토크 제어시 self.init_state 제거
+
+            positions.append(dxl_present_position)
         
         return positions
+
     
     def get_qvel(self):
         velocities = np.zeros(len(self.DXL_IDs))
@@ -187,7 +198,9 @@ class RemoteDynamixel:
 
         self.groupSyncWriteTorque = GroupSyncWrite(self.portHandler, self.packetHandler, self.ADDR_GOAL_CURRENT, 2)
         self.groupSyncWritePosition = GroupSyncWrite(self.portHandler, self.packetHandler, self.ADDR_GOAL_POSITION, 4)
-        
+        self.groupSyncReadPosition = GroupSyncRead(self.portHandler, self.packetHandler, self.ADDR_PRESENT_POSITION, 4)
+        self.groupSyncReadVelocity = GroupSyncRead(self.portHandler, self.packetHandler, self.ADDR_PRESENT_VELOCITY, 4)
+
         # 다이나믹셀 연결 및 위치 초기화
         self.connect_motor()
 
@@ -292,22 +305,39 @@ class RemoteDynamixel:
         self.groupSyncWritePosition.txPacket()
     
     def get_qpos(self):
-        positions = np.zeros(len(self.DXL_IDs))
-        for num, dxl_id in enumerate(self.DXL_IDs):
-            dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_POSITION)
+        self.groupSyncReadPosition.clearParam()
+
+        for dxl_id in self.DXL_IDs:
+            dxl_addparam_result = self.groupSyncReadPosition.addParam(dxl_id)
+
+        dxl_comm_result = self.groupSyncReadPosition.txRxPacket()
+
+        positions = []
+        for dxl_id in self.DXL_IDs:
+            dxl_getdata_result = self.groupSyncReadPosition.isAvailable(dxl_id, self.ADDR_PRESENT_POSITION, 4)
             if dxl_present_position > 4000000:
-                dxl_present_position = dxl_present_position - 4294965248 - 2048
-            positions[num] = dxl_present_position / 2048 * pi - self.init_state[dxl_id] # 토크 제어시 self.init_state 제거
+                dxl_present_position = dxl_present_position - 4294965240 - 2048
+            dxl_present_position = self.groupSyncReadPosition.getData(dxl_id, self.ADDR_PRESENT_POSITION, 4)
+            positions.append(dxl_present_position / 2048 * pi)
         
         return positions
     
     def get_qvel(self):
-        velocities = np.zeros(len(self.DXL_IDs))
-        for num, dxl_id in enumerate(self.DXL_IDs):
-            dxl_present_velocity, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_VELOCITY)
+        self.groupSyncReadVelocity.clearParam()
+
+        for dxl_id in self.DXL_IDs:
+            dxl_addparam_result = self.groupSyncReadVelocity.addParam(dxl_id)
+
+        dxl_comm_result = self.groupSyncReadVelocity.txRxPacket()
+
+        velocities = []
+        for dxl_id in self.DXL_IDs:
+            dxl_getdata_result = self.groupSyncReadVelocity.isAvailable(dxl_id, self.ADDR_PRESENT_VELOCITY, 4)
             if dxl_present_velocity > 400000:
                 dxl_present_velocity = dxl_present_velocity - 4294967296
-            velocities[num] = dxl_present_velocity * 0.229 / 60
+            dxl_present_velocity = self.groupSyncReadPosition.getData(dxl_id, self.ADDR_PRESENT_VELOCITY, 4)
+            velocities.append(dxl_present_velocity * 0.229 / 60)
+        
         return velocities
 
     def close_port(self):
@@ -315,8 +345,9 @@ class RemoteDynamixel:
 
 # import numpy as np
 
-# m1 = Dynamixel(14)
- 
+# m1 = MainDynamixel([11,12,13,14,15])
+# while 1:
+#     print(m1.get_qpos())
 
 # for i in np.linspace(0, 4, 100):
 #     torque = -pi * i / 8
