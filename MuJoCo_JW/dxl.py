@@ -1,5 +1,3 @@
-import os
-import time
 from math import pi
 from dynamixel_sdk import *  
 import numpy as np
@@ -114,7 +112,7 @@ class MainDynamixel:
     def control_torque(self, torque_values):
         self.groupSyncWriteTorque.clearParam()
         
-        for dxl_id, goal in zip(self.DXL_IDs, torque_values):
+        for dxl_id, goal in zip(self.DXL_IDs[:-1], torque_values):
             if goal < 0:
                 goal *= 2
             goal_torque = int(goal)
@@ -124,6 +122,19 @@ class MainDynamixel:
         self.groupSyncWriteTorque.txPacket()
         
     def control_pos(self, goal_position):
+        self.groupSyncWritePosition.clearParam()
+        for dxl_id, goal in zip(self.DXL_IDs[:-1], goal_position):
+            goal = goal / pi * 2048 #+ init_state / pi * 2048
+            goal_pos = int(goal)
+            param_goal_pos = [DXL_LOBYTE(DXL_LOWORD(goal_pos)),
+                              DXL_HIBYTE(DXL_LOWORD(goal_pos)),
+                              DXL_LOBYTE(DXL_HIWORD(goal_pos)),
+                              DXL_HIBYTE(DXL_HIWORD(goal_pos))]
+            self.groupSyncWritePosition.addParam(dxl_id, param_goal_pos)
+        
+        self.groupSyncWritePosition.txPacket()
+  
+    def control_by_remote(self, goal_position):
         self.groupSyncWritePosition.clearParam()
         for dxl_id, goal in zip(self.DXL_IDs, goal_position):
             goal = goal / pi * 2048 #+ init_state / pi * 2048
@@ -136,24 +147,58 @@ class MainDynamixel:
         
         self.groupSyncWritePosition.txPacket()
     
+    def control_gripper(self, goal_position):
+        goal_position = int(goal_position)
+        dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, self.DXL_IDs[-1], self.ADDR_GOAL_POSITION, goal_position)
+
     def get_qpos(self):
-        positions = np.zeros(len(self.DXL_IDs))
+        self.groupSyncReadPosition.clearParam()
+        results = []
+
         for num, dxl_id in enumerate(self.DXL_IDs):
-            dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_POSITION)
-            if dxl_present_position > 4000000:
-                dxl_present_position = dxl_present_position - 4294965248 - 2048
-            positions[num] = dxl_present_position / 2048 * pi - self.init_state[dxl_id] # 토크 제어시 self.init_state 제거
-        
-        return positions
+            if not self.groupSyncReadPosition.addParam(dxl_id):
+                print(f"Failed to add parameter for ID {dxl_id}")
+                continue
+
+        dxl_comm_result = self.groupSyncReadPosition.txRxPacket()
+        if dxl_comm_result != COMM_SUCCESS:
+            print(f"Communication failed with result: {dxl_comm_result}")
+            return dxl_comm_result
+
+        for dxl_id in self.DXL_IDs:
+            position = self.groupSyncReadPosition.getData(dxl_id, self.ADDR_PRESENT_POSITION, 4)
+            if position > 4000000:
+                position = position - 4294965248 - 2048
+            position = position / 2048 * pi
+            results.append(position)
+
+        self.groupSyncReadPosition.clearParam()
+        return results
+
     
     def get_qvel(self):
-        velocities = np.zeros(len(self.DXL_IDs))
+        self.groupSyncReadVelocity.clearParam()
+        results = []
+
         for num, dxl_id in enumerate(self.DXL_IDs):
-            dxl_present_velocity, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_VELOCITY)
-            if dxl_present_velocity > 400000:
-                dxl_present_velocity = dxl_present_velocity - 4294967296
-            velocities[num] = dxl_present_velocity * 0.229 / 60
-        return velocities
+            if not self.groupSyncReadVelocity.addParam(dxl_id):
+                print(f"Failed to add parameter for ID {dxl_id}")
+                continue
+
+        dxl_comm_result = self.groupSyncReadVelocity.txRxPacket()
+        if dxl_comm_result != COMM_SUCCESS:
+            print(f"Communication failed with result: {dxl_comm_result}")
+            return dxl_comm_result
+
+        for dxl_id in self.DXL_IDs:
+            velocity = self.groupSyncReadVelocity.getData(dxl_id, self.ADDR_PRESENT_VELOCITY, 4)
+            if velocity > 400000:
+                velocity = velocity - 4294967296
+            velocity = velocity * 0.229 / 60
+            results.append(velocity)
+
+        self.groupSyncReadVelocity.clearParam()
+        return results
 
     def close_port(self):
         self.portHandler.closePort()
@@ -189,6 +234,8 @@ class RemoteDynamixel:
 
         self.groupSyncWriteTorque = GroupSyncWrite(self.portHandler, self.packetHandler, self.ADDR_GOAL_CURRENT, 2)
         self.groupSyncWritePosition = GroupSyncWrite(self.portHandler, self.packetHandler, self.ADDR_GOAL_POSITION, 4)
+        self.groupSyncReadPosition = GroupSyncRead(self.portHandler,  self.packetHandler, self.ADDR_PRESENT_POSITION, 4)
+        self.groupSyncReadVelocity = GroupSyncRead(self.portHandler,  self.packetHandler, self.ADDR_PRESENT_VELOCITY, 4)
         
         # 다이나믹셀 연결 및 위치 초기화
         self.connect_motor()
@@ -292,32 +339,65 @@ class RemoteDynamixel:
             self.groupSyncWritePosition.addParam(dxl_id, param_goal_pos)
         
         self.groupSyncWritePosition.txPacket()
-    
+
     def get_qpos(self):
-        positions = np.zeros(len(self.DXL_IDs))
+        self.groupSyncReadPosition.clearParam()
+        results = []
+
         for num, dxl_id in enumerate(self.DXL_IDs):
-            dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_POSITION)
-            if dxl_present_position > 4000000:
-                dxl_present_position = dxl_present_position - 4294965248 - 2048
-            positions[num] = dxl_present_position / 2048 * pi - self.init_state[dxl_id] # 토크 제어시 self.init_state 제거
-        
-        return positions
+            if not self.groupSyncReadPosition.addParam(dxl_id):
+                print(f"Failed to add parameter for ID {dxl_id}")
+                continue
+
+        dxl_comm_result = self.groupSyncReadPosition.txRxPacket()
+        if dxl_comm_result != COMM_SUCCESS:
+            print(f"Communication failed with result: {dxl_comm_result}")
+            return dxl_comm_result
+
+        for dxl_id in self.DXL_IDs:
+            position = self.groupSyncReadPosition.getData(dxl_id, self.ADDR_PRESENT_POSITION, 4)
+            if position > 4000000:
+                position = position - 4294965248 - 2048
+            position = position / 2048 * pi
+            results.append(position)
+
+        self.groupSyncReadPosition.clearParam()
+        return results
     
     def get_qvel(self):
-        velocities = np.zeros(len(self.DXL_IDs))
+        self.groupSyncReadVelocity.clearParam()
+        results = []
+
         for num, dxl_id in enumerate(self.DXL_IDs):
-            dxl_present_velocity, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(self.portHandler, dxl_id, self.ADDR_PRESENT_VELOCITY)
-            if dxl_present_velocity > 400000:
-                dxl_present_velocity = dxl_present_velocity - 4294967296
-            velocities[num] = dxl_present_velocity * 0.229 / 60
-        return velocities
+            if not self.groupSyncReadVelocity.addParam(dxl_id):
+                print(f"Failed to add parameter for ID {dxl_id}")
+                continue
+
+        dxl_comm_result = self.groupSyncReadVelocity.txRxPacket()
+        if dxl_comm_result != COMM_SUCCESS:
+            print(f"Communication failed with result: {dxl_comm_result}")
+            return dxl_comm_result
+
+        for dxl_id in self.DXL_IDs:
+            velocity = self.groupSyncReadVelocity.getData(dxl_id, self.ADDR_PRESENT_VELOCITY, 4)
+            if velocity > 400000:
+                velocity = velocity - 4294967296
+            velocity = velocity * 0.229 / 60
+            results.append(velocity)
+
+        self.groupSyncReadVelocity.clearParam()
+        return results
 
     def close_port(self):
         self.portHandler.closePort()
 
 # import numpy as np
+ 
+# m1 = RemoteDynamixel([5,6,7,8,9])
+# while 1:
+#     print("pos : ",m1.get_qpos())
+#     print("vel : ",m1.get_qvel())
 
-# m1 = Dynamixel(14)
  
 
 # for i in np.linspace(0, 4, 100):
