@@ -1,6 +1,5 @@
 import numpy as np
 from math import pi
-from scipy.spatial.transform import Rotation as R
 
 def Rot_x(q):
     q = np.deg2rad(q)
@@ -73,23 +72,23 @@ def Rot2EulerZXY(rot):
     euler = np.zeros((3,))
     if rot[2,1] < 1:
         if rot[2,1] > -1:
-            euler[0] = np.atan2(-rot[0,1], rot[1,1])
-            euler[1] = np.asin(rot[2,1])
-            euler[2] = np.atan2(-rot[2,0], rot[2,2])
+            euler[0] = np.arctan2(-rot[0,1], rot[1,1])
+            euler[1] = np.arcsin(rot[2,1])
+            euler[2] = np.arctan2(-rot[2,0], rot[2,2])
         else:
-            euler[0] = -np.atan2(rot[0,2], rot[0,0])
+            euler[0] = -np.arctan2(rot[0,2], rot[0,0])
             euler[1] = -pi/2
             euler[2] = 0
     else:
-        euler[0] = np.atan2(rot[0,2], rot[0,0])
+        euler[0] = np.arctan2(rot[0,2], rot[0,0])
         euler[1] = pi/2
         euler[2] = 0
     
     return euler.T
 
-def Rot2Quat(Rot):
+def Rot2Quat(R):
     # Calculate the trace of the matrix
-    trace = np.trace(Rot)
+    trace = np.trace(R)
     
     # Initialize quaternion array
     q = np.zeros(4)
@@ -97,28 +96,28 @@ def Rot2Quat(Rot):
     if trace > 0:
         s = 2.0 * np.sqrt(trace + 1.0)
         q[0] = 0.25 * s
-        q[1] = (Rot[2, 1] - Rot[1, 2]) / s
-        q[2] = (Rot[0, 2] - Rot[2, 0]) / s
-        q[3] = (Rot[1, 0] - Rot[0, 1]) / s
-    elif (Rot[0, 0] > Rot[1, 1]) and (Rot[0, 0] > Rot[2, 2]):
-        s = 2.0 * np.sqrt(1.0 + Rot[0, 0] - Rot[1, 1] - Rot[2, 2])
-        q[0] = (Rot[2, 1] - Rot[1, 2]) / s
+        q[1] = (R[2, 1] - R[1, 2]) / s
+        q[2] = (R[0, 2] - R[2, 0]) / s
+        q[3] = (R[1, 0] - R[0, 1]) / s
+    elif (R[0, 0] > R[1, 1]) and (R[0, 0] > R[2, 2]):
+        s = 2.0 * np.sqrt(1.0 + R[0, 0] - R[1, 1] - R[2, 2])
+        q[0] = (R[2, 1] - R[1, 2]) / s
         q[1] = 0.25 * s
-        q[2] = (Rot[0, 1] + Rot[1, 0]) / s
-        q[3] = (Rot[0, 2] + Rot[2, 0]) / s
-    elif Rot[1, 1] > Rot[2, 2]:
-        s = 2.0 * np.sqrt(1.0 + Rot[1, 1] - Rot[0, 0] - Rot[2, 2])
-        q[0] = (Rot[0, 2] - Rot[2, 0]) / s
-        q[1] = (Rot[0, 1] + Rot[1, 0]) / s
+        q[2] = (R[0, 1] + R[1, 0]) / s
+        q[3] = (R[0, 2] + R[2, 0]) / s
+    elif R[1, 1] > R[2, 2]:
+        s = 2.0 * np.sqrt(1.0 + R[1, 1] - R[0, 0] - R[2, 2])
+        q[0] = (R[0, 2] - R[2, 0]) / s
+        q[1] = (R[0, 1] + R[1, 0]) / s
         q[2] = 0.25 * s
-        q[3] = (Rot[1, 2] + Rot[2, 1]) / s
+        q[3] = (R[1, 2] + R[2, 1]) / s
     else:
-        s = 2.0 * np.sqrt(1.0 + Rot[2, 2] - Rot[0, 0] - Rot[1, 1])
-        q[0] = (Rot[1, 0] - Rot[0, 1]) / s
-        q[1] = (Rot[0, 2] + Rot[2, 0]) / s
-        q[2] = (Rot[1, 2] + Rot[2, 1]) / s
+        s = 2.0 * np.sqrt(1.0 + R[2, 2] - R[0, 0] - R[1, 1])
+        q[0] = (R[1, 0] - R[0, 1]) / s
+        q[1] = (R[0, 2] + R[2, 0]) / s
+        q[2] = (R[1, 2] + R[2, 1]) / s
         q[3] = 0.25 * s
-
+    
     return q
 
 def Quat2Rot(quat):
@@ -132,23 +131,6 @@ def Quat2Rot(quat):
     ])
 
     return R
-
-def euler_to_quaternion(roll, pitch, yaw):
-    # Euler angles (roll, pitch, yaw) must be in radians
-    roll, pitch, yaw = map(lambda x: x / 180 * pi,[roll, pitch, yaw])
-    cr = np.cos(roll / 2)
-    sr = np.sin(roll / 2)
-    cp = np.cos(pitch / 2)
-    sp = np.sin(pitch / 2)
-    cy = np.cos(yaw / 2)
-    sy = np.sin(yaw / 2)
-
-    w = cr * cp * cy + sr * sp * sy
-    x = sr * cp * cy - cr * sp * sy
-    y = cr * sp * cy + sr * cp * sy
-    z = cr * cp * sy - sr * sp * cy
-
-    return np.array([w, x, y, z])
 
 def conjugation(q):
     return np.array([q[0], -q[1], -q[2], -q[3]])
@@ -176,7 +158,7 @@ def Quat2Omega(quat, quatdot):
     Omega = np.array([trans[1], trans[2], trans[3]])
     return Omega
 
-def SVD_DLS_inverse(J, lambda_factor=0.1):
+def SVD_DLS_inverse(J, lambda_factor=0.01):
     U, S, Vt = np.linalg.svd(J, full_matrices=False)
     
     S_damped = np.diag([s / (s**2 + lambda_factor**2) for s in S])
@@ -196,3 +178,18 @@ def DLS_inverse(J, init_lambda=0.01, threshold=0.01):
     J_inverse = np.linalg.inv(J.T @ J + lambda_factor**2 * np.eye(J.shape[1])) @ J.T
     
     return J_inverse
+
+def get_XYdeg(pos):
+    x,y,z = pos[0], pos[1], pos[2]
+    radian = np.arctan2(y,x)
+    deg = radian * 180 / pi
+
+    return deg
+
+def get_XYdeg_error(pos1, pos2):
+    deg1 = get_XYdeg(pos1)
+    deg2 = get_XYdeg(pos2)
+
+    error = deg2 - deg1
+
+    return error 

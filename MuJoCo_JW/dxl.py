@@ -21,6 +21,7 @@ class MainDynamixel:
         self.ADDR_GOAL_POSITION = 116      # 목표 위치 주소
         self.ADDR_PRESENT_POSITION = 132   # 현재 위치 주소
         self.ADDR_PRESENT_VELOCITY = 128   # 현재 속도 주소
+        self.ADDR_PRESENT_CURRENT = 126   # 현재 torque 주소
         self.TORQUE_ENABLE = 1             # 토크 활성화
         self.TORQUE_DISABLE = 0            # 토크 비활성화
         self.DXL_MINIMUM_POSITION_VALUE = 0     # 최소 위치 (예시)
@@ -38,6 +39,7 @@ class MainDynamixel:
         
         # 다이나믹셀 연결 및 위치 초기화
         self.connect_motor()
+        self.disable_torque()
         self.change_mode(self.POSITION_CONTROL)
         self.enable_torque()
         self.limit_velocity(20)
@@ -200,6 +202,12 @@ class MainDynamixel:
         self.groupSyncReadVelocity.clearParam()
         return results
 
+    def get_gripper_torque(self):
+        dxl_present_current, dxl_comm_result, dxl_error = self.packetHandler.read2ByteTxRx(self.portHandler, self.DXL_IDs[-1], self.ADDR_PRESENT_CURRENT)
+        if dxl_present_current > 60000:
+            dxl_present_current = dxl_present_current - 65525 - 12
+        return dxl_present_current  
+
     def close_port(self):
         self.portHandler.closePort()
 
@@ -239,7 +247,6 @@ class RemoteDynamixel:
         
         # 다이나믹셀 연결 및 위치 초기화
         self.connect_motor()
-
         self.change_mode(self.POSITION_CONTROL)
         self.enable_torque()
         self.limit_velocity(60)
@@ -363,6 +370,7 @@ class RemoteDynamixel:
 
         self.groupSyncReadPosition.clearParam()
         return results
+
     
     def get_qvel(self):
         self.groupSyncReadVelocity.clearParam()

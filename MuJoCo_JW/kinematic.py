@@ -1,7 +1,4 @@
-import mujoco_py
 from functions import *
-from scipy.linalg import expm
-from math import pi
 
 class Kinematic:
     def __init__(self, sim):
@@ -53,8 +50,8 @@ class Kinematic:
         q = np.array([np.array([0, 0, 0]).T,
                       np.array([0, 0, 0.765]).T,
                       np.array([0, 0, 0.765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.22, 0]).T,
-                      np.array([0, 0, 0.765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.22, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.22375, 0]).T,
-                      np.array([0, 0, 0.765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.22, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.22375, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.04, 0]).T])
+                      np.array([0, 0, 0.765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.22, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.2025, 0]).T,
+                      np.array([0, 0, 0.765]).T + Rot_x(90) @ Rot_z(90) @ np.array([0.024, 0.22, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.2025, 0]).T + Rot_x(90) @ Rot_z(90) @ Rot_z(-180) @ np.array([0, 0.06, 0]).T])
         
         v = -np.cross(w, q)
         return w,v
@@ -70,9 +67,9 @@ class Kinematic:
                  np.sin(omega_norm * theta) / omega_norm * omega_hat +
                  (1 - np.cos(omega_norm * theta)) / (omega_norm ** 2) * np.dot(omega_hat, omega_hat))
             
-            p = (np.eye(3) * theta +
-                 (1 - np.cos(omega_norm * theta)) / (omega_norm ** 2) * omega_hat +
-                 (theta - np.sin(omega_norm * theta) / omega_norm) / (omega_norm ** 2) * np.dot(omega_hat, omega_hat)).dot(v)
+            p = ((np.eye(3) * theta +
+              (1 - np.cos(omega_norm * theta)) / (omega_norm ** 2) * omega_hat +
+             (theta - np.sin(omega_norm * theta) / omega_norm) / (omega_norm ** 2) * np.dot(omega_hat, omega_hat)).dot(v))
             
         if self.model.jnt_type[i] == 2:
             R = np.eye(3)
@@ -82,30 +79,6 @@ class Kinematic:
         
 
     def forward_kinematics(self, q):
-        #=================4DOF=========================
-        # 초기 엔드 이펙터 좌표 (기준 좌표계에서의 위치)
-        # T_ = []
-        # T_.append(np.eye(4))
-
-        # T_.append(np.eye(4))
-        # T_[1][2,3] = 0.5
-        # T_[1][:3,:3] = Rot_x(90) @ Rot_z(-10) 
-
-        # T_.append(np.eye(4))
-        # z = np.array([[0,0.8,0]])
-        # T_[2][:3, 3] = T_[1][:3, 3] + T_[1][:3,:3] @ np.reshape(z,(3,))
-        # T_[2][:3,:3] = T_[1][:3,:3] @ Rot_z(-10)
-
-        # T_.append(np.eye(4))
-        # z = np.array([[0,1.0,0]])
-        # T_[3][:3,3] = T_[2][:3, 3] + T_[2][:3,:3] @ np.reshape(z,(3,))
-        # T_[3][:3,:3] = T_[2][:3,:3] @ Rot_z(-10)
-
-        # T_.append(np.eye(4))
-        # z = np.array([[0,0.35,0]])
-        # T_[4][:3,3] = T_[3][:3, 3] + T_[3][:3,:3] @ np.reshape(z,(3,))
-        # T_[4][:3,:3] = T_[3][:3,:3]
-
         #=================Open4DOF=========================
         # T_ = []
         # T_.append(np.eye(4))
@@ -138,21 +111,22 @@ class Kinematic:
         T_[1][:3,:3] = Rot_x(90) @ Rot_z(90) 
 
         T_.append(np.eye(4))
-        z = np.array([[0.024,0.22,0]])
+        z = np.array([[0.024,0.220,0]])
         T_[2][:3, 3] = T_[1][:3, 3] + T_[1][:3,:3] @ np.reshape(z,(3,))
         T_[2][:3,:3] = T_[1][:3,:3] @ Rot_z(-180)
 
         T_.append(np.eye(4))
-        z = np.array([[0,0.22375,0]])
+        z = np.array([[0,0.2025,0]])
         T_[3][:3,3] = T_[2][:3, 3] + T_[2][:3,:3] @ np.reshape(z,(3,))
         T_[3][:3,:3] = T_[2][:3,:3]
+        
         T_.append(np.eye(4))
-        z = np.array([[0,0.04,0]])
+        z = np.array([[0,0.06,0]])
         T_[4][:3,3] = T_[3][:3, 3] + T_[3][:3,:3] @ np.reshape(z,(3,))
         T_[4][:3,:3] = T_[3][:3,:3] @ Rot_x(-90)
 
         T_.append(np.eye(4))
-        z = np.array([[0,0,0.048]])
+        z = np.array([[0,0,0.095]])
         T_[5][:3,3] = T_[4][:3, 3] + T_[4][:3,:3] @ np.reshape(z,(3,))
         T_[5][:3,:3] = T_[4][:3,:3]
         
@@ -165,7 +139,7 @@ class Kinematic:
         T = np.eye(4)
         for i, xi in enumerate(twists):
             T = np.dot(T, self.exp_twist(i, xi, q[i]))
-            T_[i + 1] = np.dot(T,T_[i + 1])
+            T_[i + 1] = np.dot(T, T_[i + 1])
 
         self.R_lnk = []
         self.P_lnk = []
